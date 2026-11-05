@@ -3,7 +3,7 @@ import type { BankWorkspace } from "@prisma/client";
 export const ADMIN_SESSION_COOKIE = "metc_admin_session";
 export const OAUTH_STATE_COOKIE = "metc_oauth_state";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
-const ADMIN_EMAILS = new Set(["phuongtu213@gmail.com", "fchienvuhoang@gmail.com", "ntluc.han@gmail.com"]);
+const ADMIN_EMAILS = new Set(["phuongtu213@gmail.com", "fchienvuhoang@gmail.com"]);
 
 export function isGoogleAuthConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.AUTH_SECRET);

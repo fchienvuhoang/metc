@@ -22,10 +22,13 @@ const { NextRequest } = require("next/server");
 const callback = load("../src/app/api/auth/google/callback/route.ts", { "@/lib/auth": auth });
 
 test("only the permitted emails can receive sessions", async () => {
-  for (const email of ["phuongtu213@gmail.com", "fchienvuhoang@gmail.com", "ntluc.han@gmail.com"]) {
+  for (const email of ["phuongtu213@gmail.com", "fchienvuhoang@gmail.com"]) {
     assert.equal(await auth.verifyAdminSessionToken(await auth.createAdminSessionToken(email)), "VIB");
   }
   await assert.rejects(auth.createAdminSessionToken("other@gmail.com"));
+  await assert.rejects(auth.createAdminSessionToken("ntluc.han@gmail.com"));
+  const revokedSession = await auth.signAuthPayload({ purpose: "admin", email: "ntluc.han@gmail.com", workspace: "VIB", exp: Date.now() / 1000 + 60 });
+  assert.equal(await auth.verifyAdminSessionToken(revokedSession), null);
 });
 
 test("reject expired, modified and wrong-purpose sessions and unsafe redirects", async () => {
@@ -47,7 +50,7 @@ test("OAuth callback requires a verified allowlisted Google identity", async () 
   const originalFetch = globalThis.fetch;
   const state = await auth.signAuthPayload({ purpose: "oauth", state: "test-state", verifier: "test-verifier", redirectUri: "http://localhost:3000/api/auth/google/callback", next: "/", exp: Date.now() / 1000 + 60 });
   try {
-    for (const [email, verified, allowed] of [["other@gmail.com", true, false], ["phuongtu213@gmail.com", false, false], ["phuongtu213@gmail.com", true, true], ["fchienvuhoang@gmail.com", true, true], ["ntluc.han@gmail.com", true, true], ["ntluc.han@gmail.com", false, false]]) {
+    for (const [email, verified, allowed] of [["other@gmail.com", true, false], ["phuongtu213@gmail.com", false, false], ["phuongtu213@gmail.com", true, true], ["fchienvuhoang@gmail.com", true, true], ["ntluc.han@gmail.com", true, false], ["ntluc.han@gmail.com", false, false]]) {
       globalThis.fetch = async (url) => Response.json(String(url).includes("/token") ? { access_token: "test-access" } : { email, email_verified: verified });
       const response = await callback.GET(new NextRequest("http://localhost:3000/api/auth/google/callback?code=test&state=test-state", { headers: { cookie: `${auth.OAUTH_STATE_COOKIE}=${state}` } }));
       const session = response.cookies.get(auth.ADMIN_SESSION_COOKIE)?.value;
