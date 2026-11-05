@@ -1,4 +1,5 @@
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: [".env.local", ".env"], quiet: true });
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
