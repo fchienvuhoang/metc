@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Eye, HeartHandshake, Loader2, Search, Sparkles, X } from "lucide-react";
+import { Download, Eye, HeartHandshake, Loader2, Search, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { downloadElementAsPng } from "@/lib/download-image";
@@ -17,7 +17,7 @@ const statusLabels = {
 };
 
 const statusClassNames = {
-  ACTIVE: "border-rose-200 bg-rose-50 text-rose-700",
+  ACTIVE: "border-[#9fd3bd] bg-[#effaf5] text-[#256b52]",
   PAUSED: "border-amber-200 bg-amber-50 text-amber-700",
   COMPLETED: "border-zinc-200 bg-zinc-50 text-zinc-600",
 };
@@ -45,80 +45,74 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   }, [data.transactions, normalizedQuery]);
 
   return (
-    <div className="min-h-screen bg-[#fff8f3] text-zinc-950">
-      <header className="relative overflow-hidden border-b border-rose-100 bg-[#fff1ea]">
+    <div className="min-h-screen bg-[#fff8fb] text-[#2d1726]">
+      <header
+        className="public-campaign-hero relative isolate overflow-hidden border-b border-[#dba8bf] bg-[#f7eaf0]"
+      >
         <Image
-          src="/devas-hero-bg-mobile-v1.png"
+          src="/assets/mettacitta-celestial-painted-mobile.jpg"
           alt=""
           fill
           priority
-          sizes="(max-width: 1023px) 100vw, 1px"
-          aria-hidden="true"
-          className="pointer-events-none object-cover object-center opacity-60 sm:opacity-65 lg:hidden"
+          sizes="(max-width: 767px) 100vw, 1px"
+          className="object-cover object-top md:hidden"
         />
         <Image
-          src="/devas-hero-bg-v2.jpg"
+          src="/assets/mettacitta-celestial-painted.jpg"
           alt=""
           fill
           priority
-          sizes="(min-width: 1024px) 100vw, 1px"
-          aria-hidden="true"
-          className="pointer-events-none hidden object-cover object-center lg:block"
+          sizes="(min-width: 768px) 100vw, 1px"
+          className="hidden object-cover object-center md:block"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/5 via-[#fff8f3]/10 to-[#fff1ea]/50 lg:from-white/20 lg:via-[#fff8f3]/35 lg:to-[#fff1ea]/80" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-white/20 lg:from-white/15 lg:via-transparent lg:to-white/15" />
-
-        <div className="relative mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:gap-12 lg:py-14">
-          <div>
-            <div className="flex items-center gap-4 sm:gap-5">
-              <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full bg-rose-950 px-3 py-1.5 text-xs font-medium text-white shadow-sm">
-                  <Sparkles className="h-3.5 w-3.5 text-rose-200" />
-                  Thiện pháp <span className="font-mono text-rose-100">{data.code}</span>
+        <div className="absolute inset-0 bg-[#fff8fb]/35 sm:bg-[#fff8fb]/58" />
+        <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-9 lg:py-12">
+          <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xl font-semibold tracking-tight text-[#4c173b]">MettaCitta</span>
+                <span className="rounded-md bg-[#4c173b] px-3 py-1.5 font-mono text-xs font-semibold text-white shadow-sm">
+                  Thiện pháp {data.code}
                 </span>
-                <span className={`rounded-full border bg-white/70 px-3 py-1.5 text-xs font-medium backdrop-blur ${statusClassNames[data.status]}`}>
+                <span className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${statusClassNames[data.status]}`}>
                   {statusLabels[data.status]}
                 </span>
               </div>
+
+              <p className="mt-6 text-xs font-bold uppercase text-[#a43d6a] sm:text-sm">
+                DĀNA PUÑÑA
+              </p>
+              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/70 bg-white/50 px-4 py-3 text-2xl font-bold leading-tight text-[#4a1838] shadow-[0_8px_22px_rgba(76,23,59,0.1)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
+                {data.name}
+              </h1>
+              {data.description ? (
+                <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-[#624b59] sm:text-base">
+                  {data.description}
+                </p>
+              ) : null}
             </div>
 
-            <div className="mt-7 flex items-start gap-4">
-              <span className="hidden rounded-2xl bg-white/70 p-3 text-rose-700 shadow-sm ring-1 ring-rose-100 backdrop-blur sm:block">
-                <HeartHandshake className="h-7 w-7" />
-              </span>
-              <div className="min-w-0 rounded-2xl border border-white/[0.65] bg-white/[0.55] p-4 shadow-lg shadow-rose-950/5 backdrop-blur-[1.5px] lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-700">MettaCitta</p>
-                <h1 className="mt-2 max-w-2xl text-3xl font-bold leading-tight tracking-[-0.03em] text-rose-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.9)] lg:text-4xl lg:font-semibold lg:drop-shadow-none">
-                  {data.name}
-                </h1>
-                {data.description ? (
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-stone-600 sm:text-base">{data.description}</p>
-                ) : null}
+            <section className="overflow-hidden rounded-lg border border-[#d79bb8] bg-white/95 shadow-lg shadow-[#4c173b]/12" aria-label="Tổng quan tịnh tài">
+              <div className="bg-[#4c173b] px-5 py-5 text-white sm:px-6">
+                <p className="text-xs font-semibold uppercase text-[#f2c5d8]">Tịnh tài hiện còn</p>
+                <p className="mt-2 break-words text-3xl font-bold leading-tight sm:text-4xl">{money(data.balance)}</p>
               </div>
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl border border-white/80 bg-white/80 shadow-xl shadow-rose-950/5 backdrop-blur">
-            <div className="border-b border-rose-100 bg-rose-950 px-5 py-5 text-white">
-              <p className="text-xs font-medium uppercase tracking-wider text-rose-200">Tịnh tài hiện còn</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{money(data.balance)}</p>
-            </div>
-            <div className="grid grid-cols-2 divide-x divide-rose-100">
-              <HeroStat label="Đã hùn phước" value={money(data.income)} tone="rose" />
-              <HeroStat label="Đã cúng dường" value={money(data.expenses)} tone="amber" />
-            </div>
-            <div className="flex items-center justify-between border-t border-rose-100 px-5 py-3 text-xs text-stone-500">
-              <span>Số lượt hùn phước</span>
-              <span className="font-semibold text-rose-950">{data.transactionCount.toLocaleString("vi-VN")}</span>
-            </div>
+              <div className="grid grid-cols-2 divide-x divide-y divide-[#efd3df]">
+                <HeroStat label="Đã hùn phước" value={money(data.income)} tone="rose" />
+                <HeroStat label="Đã cúng dường" value={money(data.expenses)} tone="amber" />
+              </div>
+              <div className="flex justify-between border-t border-[#efd3df] bg-[#fffafd] px-5 py-3 text-xs text-[#75606e]">
+                <span>Lượt hùn phước</span>
+                <span className="font-bold text-[#4a1838]">{data.transactionCount.toLocaleString("vi-VN")}</span>
+              </div>
+            </section>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-4 px-4 py-4 sm:px-6">
+      <main className="mx-auto max-w-6xl space-y-5 px-4 py-5 sm:px-6 sm:py-7">
         {showMonthlyExpenses ? (
-          <section className="rounded-md border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+          <section className="rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
             <div>
               <h2 className="text-sm font-semibold text-zinc-950">Thống kê thu và chi theo tháng</h2>
               <p className="mt-1 text-xs text-zinc-500">Tổng tịnh tài thu vào và các khoản cúng dường trong từng tháng</p>
@@ -136,9 +130,9 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                       </div>
                     </div>
                     <div className="grid w-full grid-cols-2 gap-2 text-right sm:w-auto sm:min-w-72">
-                      <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Tổng thu</div>
-                        <div className="mt-0.5 whitespace-nowrap font-semibold tabular-nums text-emerald-800">{money(summary.incomeAmount)}</div>
+                      <div className="rounded-md border border-[#e4b2c8] bg-[#fff5f9] px-3 py-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-[#a3315f]">Tổng thu</div>
+                        <div className="mt-0.5 whitespace-nowrap font-semibold tabular-nums text-[#a3315f]">{money(summary.incomeAmount)}</div>
                       </div>
                       <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2">
                         <div className="text-[10px] font-semibold uppercase tracking-wide text-red-700">Tổng chi</div>
@@ -190,14 +184,14 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           </section>
         ) : null}
 
-        <section className="rounded-md border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+        <section className="rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-sm shadow-emerald-900/20">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#b63f70] text-white shadow-sm shadow-emerald-900/20">
                 <HeartHandshake className="h-5 w-5" />
               </span>
               <div>
-                <h2 className="text-base font-semibold tracking-tight text-emerald-950">Phương danh thí chủ</h2>
+                <h2 className="text-base font-semibold tracking-tight text-[#4a1838]">Phương danh thí chủ</h2>
                 <p className="mt-0.5 text-xs text-stone-500">
                   {filteredTransactions.length.toLocaleString("vi-VN")} / {data.transactions.length.toLocaleString("vi-VN")} khoản hùn phước công khai
                 </p>
@@ -209,12 +203,12 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Tìm theo phương danh hoặc nội dung"
-                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/30 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                className="w-full rounded-lg border border-[#e4b2c8] bg-[#fffafd] py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#b63f70] focus:bg-white focus:ring-2 focus:ring-[#efd3df]"
               />
             </div>
           </div>
 
-          <div className="mt-4 space-y-2 md:hidden">
+          <div className="mt-5 space-y-3 xl:hidden">
             {filteredTransactions.map((transaction, index) => (
               <PublicTransactionCard
                 key={transaction.id}
@@ -226,10 +220,10 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             {filteredTransactions.length === 0 ? <EmptyState /> : null}
           </div>
 
-          <div className="mt-4 hidden overflow-hidden rounded-xl border border-emerald-200 shadow-sm shadow-emerald-950/5 md:block">
-            <div className="max-h-[680px] overflow-auto">
-              <table className="w-full min-w-[820px] text-left text-sm">
-                <thead className="sticky top-0 z-10 bg-gradient-to-r from-emerald-100 via-emerald-50 to-amber-50 text-[11px] uppercase tracking-[0.1em] text-emerald-900 shadow-sm">
+          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#edcddb] xl:block">
+            <div className="w-full">
+              <table className="w-full table-fixed text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-[#fff1f6] text-[11px] uppercase tracking-[0.1em] text-[#684e5b] shadow-sm">
                   <tr>
                     <th className="w-16 px-3 py-3 text-center font-semibold">STT</th>
                     <th className="w-32 px-3 py-3 font-semibold">Ngày</th>
@@ -238,7 +232,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                     <th className="w-40 px-3 py-3 text-right font-semibold">Tịnh tài</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-emerald-100/70 bg-white">
+                <tbody className="divide-y divide-[#f3dfe7]/70 bg-white">
                   {filteredTransactions.map((transaction, index) => (
                     <PublicTransactionRow
                       key={transaction.id}
@@ -283,10 +277,10 @@ function PublicTransactionCard({
   const meta = transactionMeta(transaction);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm shadow-emerald-950/5">
-      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-50 via-white to-amber-50/70 px-3 py-3">
+    <article className="overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)]">
+      <div className="flex items-center justify-between gap-3 bg-[#fff5f9] px-3 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-white text-xs font-semibold tabular-nums text-emerald-700 shadow-sm">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#e4b2c8] bg-white text-xs font-semibold tabular-nums text-[#a3315f] shadow-sm">
             {index}
           </span>
           <div className="min-w-0">
@@ -296,11 +290,11 @@ function PublicTransactionCard({
             </div>
           </div>
         </div>
-        <div className={`whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-right text-sm font-bold tabular-nums shadow-sm ring-1 ring-inset ring-emerald-100 ${meta.amountClassName}`}>
+        <div className={`whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-right text-sm font-bold tabular-nums shadow-sm ring-1 ring-inset ring-[#efd3df] ${meta.amountClassName}`}>
           {money(meta.amount)}
         </div>
       </div>
-      <p className="whitespace-pre-wrap break-words border-t border-emerald-100 px-3 py-3 text-sm font-semibold leading-6 text-zinc-900">
+      <p className="whitespace-pre-wrap break-words border-t border-[#efd3df] px-3 py-3 text-sm font-semibold leading-6 text-zinc-900">
         {redactPhoneNumbers(transaction.description)}
       </p>
       {transaction.groupedContribution ? (
@@ -327,14 +321,14 @@ function PublicTransactionRow({
   const meta = transactionMeta(transaction);
 
   return (
-    <tr className="odd:bg-white even:bg-emerald-50/25 transition-colors hover:bg-amber-50/60">
+    <tr className="odd:bg-white even:bg-[#fff8fb] transition-colors hover:bg-[#fff1f6]">
       <td className="px-3 py-3 text-center align-top">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-emerald-200 bg-white text-xs font-semibold tabular-nums text-emerald-700 shadow-sm">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#e4b2c8] bg-white text-xs font-semibold tabular-nums text-[#a3315f] shadow-sm">
           {index}
         </span>
       </td>
       <td className="whitespace-nowrap px-3 py-3 align-top text-xs tabular-nums text-stone-500">{transactionDateTime(transaction.transactionDate)}</td>
-      <td className="min-w-[360px] px-3 py-3 align-top">
+      <td className="min-w-0 px-3 py-3 align-top">
         <div className="whitespace-pre-wrap break-words font-semibold leading-6 text-zinc-900">
           {redactPhoneNumbers(transaction.description)}
         </div>
@@ -347,7 +341,7 @@ function PublicTransactionRow({
         </span>
       </td>
       <td className="whitespace-nowrap px-3 py-3 text-right align-top">
-        <span className={`inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-sm font-bold tabular-nums ring-1 ring-inset ring-emerald-100 ${meta.amountClassName}`}>
+        <span className={`inline-flex rounded-full bg-[#fff5f9] px-2.5 py-1 text-sm font-bold tabular-nums ring-1 ring-inset ring-[#efd3df] ${meta.amountClassName}`}>
           {money(meta.amount)}
         </span>
       </td>
@@ -365,22 +359,22 @@ function GroupedContributionInline({ transaction }: { transaction: PublicCampaig
   const total = batch.entries.reduce((sum, entry) => sum + entry.amount, 0);
 
   return (
-    <section className="mt-3 overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm shadow-emerald-950/5">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-gradient-to-r from-emerald-50 via-amber-50/60 to-rose-50 px-3 py-3">
+    <section className="mt-3 overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#fff1f6] px-3 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white shadow-sm ring-2 ring-white/80">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#b63f70] text-white shadow-sm ring-2 ring-white/80">
             <HeartHandshake className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-emerald-950">{batch.title}</h3>
-            <p className="mt-0.5 text-[11px] text-emerald-700">
+            <h3 className="text-sm font-semibold text-[#4a1838]">{batch.title}</h3>
+            <p className="mt-0.5 text-[11px] text-[#a3315f]">
               {batch.entries.length.toLocaleString("vi-VN")} phương danh · Danh sách hùn gộp
             </p>
           </div>
         </div>
         <div className="rounded-lg border border-white/80 bg-white/80 px-2.5 py-1.5 text-right shadow-sm">
           <div className="text-[9px] font-semibold uppercase tracking-wider text-stone-500">Tổng tịnh tài</div>
-          <div className="mt-0.5 whitespace-nowrap text-xs font-bold tabular-nums text-emerald-800 sm:text-sm">{money(total)}</div>
+          <div className="mt-0.5 whitespace-nowrap text-xs font-bold tabular-nums text-[#a3315f] sm:text-sm">{money(total)}</div>
         </div>
       </div>
 
@@ -390,17 +384,17 @@ function GroupedContributionInline({ transaction }: { transaction: PublicCampaig
         </p>
       ) : null}
 
-      <div className="divide-y divide-emerald-100/70 border-t border-emerald-100">
+      <div className="divide-y divide-[#f3dfe7]/70 border-t border-[#efd3df]">
         {batch.entries.map((entry, index) => (
-          <div key={entry.id} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-2 px-3 py-2.5 odd:bg-white even:bg-emerald-50/25">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-white text-[11px] font-semibold tabular-nums text-emerald-700 shadow-sm">
+          <div key={entry.id} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-2 px-3 py-2.5 odd:bg-white even:bg-[#fff8fb]">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#e4b2c8] bg-white text-[11px] font-semibold tabular-nums text-[#a3315f] shadow-sm">
               {index + 1}
             </span>
             <div className="min-w-0">
               <div className="break-words text-sm font-semibold leading-5 text-zinc-900">{redactPhoneNumbers(entry.donorName)}</div>
               {entry.note ? <div className="mt-1 text-xs leading-5 text-stone-500">{redactPhoneNumbers(entry.note)}</div> : null}
             </div>
-            <span className="whitespace-nowrap rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold tabular-nums text-emerald-800 ring-1 ring-inset ring-emerald-100">
+            <span className="whitespace-nowrap rounded-full bg-[#fff5f9] px-2 py-1 text-xs font-bold tabular-nums text-[#a3315f] ring-1 ring-inset ring-[#efd3df]">
               {money(entry.amount)}
             </span>
           </div>
@@ -423,7 +417,7 @@ function TransactionDetailButton({
     <button
       type="button"
       onClick={onClick}
-      className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-gradient-to-r from-emerald-50 to-amber-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm transition hover:border-emerald-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-200"
+      className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#e4b2c8] bg-[#fff8fb] px-3 py-1.5 text-xs font-semibold text-[#a3315f] shadow-sm transition hover:border-[#cf7da1] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#f8dce8]"
     >
       <Eye className="h-3.5 w-3.5" />
       {batch
@@ -479,24 +473,24 @@ function PublicTransactionDetailModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="public-transaction-detail-title"
-        className="max-h-[92vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-cover bg-top shadow-2xl"
-        style={{ backgroundImage: "url('/transaction-devas-bg-v2.jpg')" }}
+        className="max-h-[92vh] w-full max-w-[420px] overflow-y-auto rounded-2xl border border-[#edcddb] bg-[#fffdf7] shadow-2xl"
+
       >
-        <div className="relative bg-gradient-to-b from-amber-50/10 to-amber-100/25 px-6 pb-8 pt-6 text-center text-amber-950">
+        <div className="relative bg-[#fff8fb] px-6 pb-6 pt-6 text-center text-[#4a1838]">
           <button
             type="button"
             onClick={onClose}
             data-export-exclude="true"
             aria-label="Đóng chi tiết giao dịch"
-            className="absolute right-4 top-4 rounded-full bg-amber-950/20 p-1.5 text-white shadow-sm hover:bg-amber-950/30"
+            className="absolute right-4 top-4 rounded-full bg-white p-1.5 text-[#624b59] shadow-sm hover:bg-[#612149]/30"
           >
             <X className="h-5 w-5" />
           </button>
           <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
-          <p id="public-transaction-detail-title" className="mt-3 text-sm font-semibold text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">
+          <p id="public-transaction-detail-title" className="mt-3 text-sm font-semibold text-[#4a1838]">
             Chi tiết giao dịch
           </p>
-          <p className="mt-1 text-3xl font-bold tracking-tight text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.95)]">
+          <p className="mt-1 text-3xl font-bold tracking-tight text-[#4a1838]">
             {money(meta.amount)}
           </p>
           <span className="mt-3 inline-flex rounded-full bg-white/65 px-3 py-1 text-xs font-semibold text-amber-950 shadow-sm backdrop-blur-[1px]">
@@ -504,7 +498,7 @@ function PublicTransactionDetailModal({
           </span>
         </div>
 
-        <div className="bg-amber-50/75 px-6 py-5">
+        <div className="bg-white/75 px-6 py-5">
           <dl className="space-y-4 text-sm">
             <PublicDetailRow label="Ngày giao dịch" value={transactionDateTime(transaction.transactionDate)} />
             <PublicDetailRow label="Mã giao dịch" value={transaction.transactionCode} mono />
@@ -541,7 +535,7 @@ function PublicTransactionDetailModal({
               type="button"
               onClick={downloadImage}
               disabled={isDownloading}
-              className="inline-flex items-center gap-2 rounded-full bg-amber-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-950 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-[#4c173b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#612149] disabled:opacity-60"
             >
               {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh"}
@@ -568,8 +562,8 @@ function PublicDetailRow({
 }) {
   if (highlighted) {
     return (
-      <div className="rounded-xl border-2 border-amber-500/45 bg-white/80 px-4 py-3 shadow-md shadow-amber-950/10 ring-1 ring-white/70">
-        <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-800">{label}</dt>
+      <div className="rounded-xl border-2 border-[#b63f70] bg-white/80 px-4 py-3 shadow-md shadow-amber-950/10 ring-1 ring-white/70">
+        <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a3315f]">{label}</dt>
         <dd className="mt-2 whitespace-pre-wrap break-words text-left text-base font-bold leading-7 text-amber-950">
           {value}
         </dd>
@@ -588,10 +582,10 @@ function PublicDetailRow({
 }
 
 function HeroStat({ label, value, tone }: { label: string; value: string; tone: "rose" | "amber" }) {
-  const color = tone === "rose" ? "text-rose-700" : "text-amber-700";
+  const color = tone === "rose" ? "text-[#2d765b]" : "text-[#a93d68]";
 
   return (
-    <div className="px-5 py-4">
+    <div className="min-w-0 bg-[#fffafd] px-4 py-3 sm:px-5 sm:py-4">
       <div className="text-xs text-stone-500">{label}</div>
       <div className={`mt-1 text-sm font-semibold sm:text-base ${color}`}>{value}</div>
     </div>
@@ -603,16 +597,16 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
     return {
       label: transaction.groupedContribution ? "Hùn phước nộp gộp" : "Hùn phước",
       amount: transaction.creditAmount,
-      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-      amountClassName: "text-zinc-950",
+      className: "border-[#9fd9c0] bg-[#effbf5] text-[#247257]",
+      amountClassName: "text-[#b33969]",
     };
   }
 
   return {
     label: "Cúng dường",
     amount: transaction.debitAmount,
-    className: "border-red-200 bg-red-50 text-red-700",
-    amountClassName: "text-red-700",
+    className: "border-[#e7c27d] bg-[#fff8e9] text-[#9a6417]",
+    amountClassName: "text-[#9a6417]",
   };
 }
 
