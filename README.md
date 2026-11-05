@@ -1,4 +1,4 @@
-# Quản lý thiện pháp và sao kê VIB
+# MettaCitta — Quản lý thiện pháp và sao kê VIB
 
 Ứng dụng Next.js tiếp nhận file sao kê Excel từ VIB, chống trùng giao dịch và phân loại nội dung theo bộ từ khóa của từng thiện pháp.
 

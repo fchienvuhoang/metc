@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Quản lý thiện pháp",
-  description: "Phân loại sao kê VIB theo thiện pháp.",
+  title: "MettaCitta | Quản lý thiện pháp",
+  description: "MettaCitta — Quản lý thiện pháp và phân loại sao kê VIB.",
 };
 
 export default function RootLayout({
@@ -34,7 +34,6 @@ export default function RootLayout({
           as="image"
           type="image/jpeg"
         />
-        <link rel="preload" href="/parami-logo.png" as="image" type="image/png" />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

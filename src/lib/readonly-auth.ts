@@ -1,4 +1,4 @@
-export const READONLY_SESSION_COOKIE = "parami_readonly_session";
+export const READONLY_SESSION_COOKIE = "mettacitta_readonly_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 export function isReadonlyDashboardConfigured() {
@@ -20,7 +20,7 @@ export async function createReadonlySessionToken(accessKey: string) {
   if (!password || !verifyReadonlyAccessKey(accessKey)) {
     throw new Error("Dashboard chỉ đọc chưa được cấu hình.");
   }
-  return hmacHex(password, `parami-readonly-v1:${accessKey}`);
+  return hmacHex(password, `mettacitta-readonly-v1:${accessKey}`);
 }
 
 export async function verifyReadonlySessionToken(token: string | undefined, accessKey: string) {

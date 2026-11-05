@@ -1,5 +1,4 @@
 import { ExternalLink, Landmark, LockKeyhole } from "lucide-react";
-import Image from "next/image";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { ReadonlyLoginForm } from "@/components/readonly-login-form";
@@ -28,7 +27,7 @@ export default async function ReadonlyDashboardPage({ params }: { params: Promis
       <main className="flex min-h-screen items-center justify-center bg-stone-50 px-4 py-10 text-zinc-950">
         <section className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-xl shadow-stone-950/5">
           <div className="flex items-center gap-4">
-            <Image src="/parami-logo.png" alt="Pāramī Group" width={72} height={72} className="h-16 w-16 rounded-full" priority />
+            <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
             <div>
               <div className="flex items-center gap-2 text-emerald-700"><LockKeyhole className="h-4 w-4" /><span className="text-xs font-semibold uppercase tracking-wider">Chỉ đọc</span></div>
               <h1 className="mt-1 text-xl font-semibold">Báo cáo thiện pháp</h1>
@@ -46,7 +45,7 @@ export default async function ReadonlyDashboardPage({ params }: { params: Promis
     <main className="min-h-screen bg-stone-50 px-4 py-6 text-zinc-950 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-5">
         <header className="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <Image src="/parami-logo.png" alt="Pāramī Group" width={80} height={80} className="h-16 w-16 rounded-full sm:h-20 sm:w-20" priority />
+          <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Báo cáo chỉ đọc</p>
             <h1 className="mt-1 text-2xl font-semibold">Tổng quan thiện pháp</h1>

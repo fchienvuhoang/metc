@@ -71,14 +71,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
         <div className="relative mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:gap-12 lg:py-14">
           <div>
             <div className="flex items-center gap-4 sm:gap-5">
-              <Image
-                src="/parami-logo.png"
-                alt="Logo Pāramī Group"
-                width={112}
-                height={112}
-                priority
-                className="h-20 w-20 shrink-0 rounded-full border-2 border-white object-cover shadow-lg shadow-rose-950/10 lg:h-28 lg:w-28"
-              />
+              <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-2 rounded-full bg-rose-950 px-3 py-1.5 text-xs font-medium text-white shadow-sm">
                   <Sparkles className="h-3.5 w-3.5 text-rose-200" />
@@ -95,7 +88,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 <HeartHandshake className="h-7 w-7" />
               </span>
               <div className="min-w-0 rounded-2xl border border-white/[0.65] bg-white/[0.55] p-4 shadow-lg shadow-rose-950/5 backdrop-blur-[1.5px] lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-700">DĀNA PĀRAMĪ</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-700">MettaCitta</p>
                 <h1 className="mt-2 max-w-2xl text-3xl font-bold leading-tight tracking-[-0.03em] text-rose-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.9)] lg:text-4xl lg:font-semibold lg:drop-shadow-none">
                   {data.name}
                 </h1>
@@ -499,13 +492,7 @@ function PublicTransactionDetailModal({
           >
             <X className="h-5 w-5" />
           </button>
-          <Image
-            src="/parami-logo.png"
-            alt="Logo Pāramī Group"
-            width={72}
-            height={72}
-            className="mx-auto h-16 w-16 rounded-full border-2 border-white/80 object-cover shadow-lg shadow-amber-950/20"
-          />
+          <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
           <p id="public-transaction-detail-title" className="mt-3 text-sm font-semibold text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">
             Chi tiết giao dịch
           </p>
@@ -547,7 +534,7 @@ function PublicTransactionDetailModal({
           ) : null}
 
           <p className="mt-5 border-t border-dashed border-zinc-200 pt-4 text-center text-[11px] text-zinc-400">
-            Ảnh đối soát giao dịch • Parami
+            Ảnh đối soát giao dịch • MettaCitta
           </p>
           <div data-export-exclude="true" className="mt-4 flex justify-center">
             <button

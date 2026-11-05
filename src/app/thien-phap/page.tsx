@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { ArrowRight, HeartHandshake, Sparkles } from "lucide-react";
-import Image from "next/image";
 import { connection } from "next/server";
 import { getCachedPublicCampaignList } from "@/lib/public-campaign";
 
 export const metadata: Metadata = {
-  title: "Các thiện pháp đang thực hiện | Pāramī Group",
-  description: "Danh sách các thiện pháp đang được Pāramī Group thực hiện.",
+  title: "Các thiện pháp đang thực hiện | MettaCitta",
+  description: "Danh sách các thiện pháp đang được MettaCitta thực hiện.",
 };
 
 export const revalidate = false;
@@ -20,18 +19,11 @@ export default async function PublicCampaignListPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="overflow-hidden rounded-3xl border border-amber-100 bg-gradient-to-br from-[#fff4e7] via-white to-emerald-50 p-5 shadow-lg shadow-amber-950/5 sm:p-8">
           <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-            <Image
-              src="/parami-logo.png"
-              alt="Pāramī Group"
-              width={112}
-              height={112}
-              priority
-              className="h-24 w-24 shrink-0 rounded-full border-2 border-white object-cover shadow-lg sm:h-28 sm:w-28"
-            />
+            <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-800">
                 <Sparkles className="h-3.5 w-3.5" />
-                Pāramī Group
+                MettaCitta
               </div>
               <h1 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-zinc-950 sm:text-4xl">
                 Các thiện pháp đang thực hiện

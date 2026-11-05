@@ -26,9 +26,8 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import type React from "react";
 import type {
   CampaignSummary,
@@ -513,7 +512,7 @@ function Dashboard({ data }: { data: DashboardData }) {
         <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-              {data.workspace} statement classifier
+              MettaCitta · {data.workspace}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal text-zinc-950">
               Quản lý thiện pháp và sao kê
@@ -1519,13 +1518,7 @@ function TransactionDetailModal({
           >
             <X className="h-5 w-5" />
           </button>
-          <Image
-            src="/parami-logo.png"
-            alt="Logo Pāramī Group"
-            width={72}
-            height={72}
-            className="mx-auto h-16 w-16 rounded-full border-2 border-white/80 object-cover shadow-lg shadow-amber-950/20"
-          />
+          <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
           <p id="transaction-detail-title" className="mt-3 text-sm font-semibold text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">
             Chi tiết giao dịch
           </p>
@@ -1558,7 +1551,7 @@ function TransactionDetailModal({
           ) : null}
 
           <p className="mt-5 border-t border-dashed border-zinc-200 pt-4 text-center text-[11px] text-zinc-400">
-            Ảnh đối soát giao dịch • Parami
+            Ảnh đối soát giao dịch • MettaCitta
           </p>
           <div data-export-exclude="true" className="mt-4 flex justify-center">
             <button
@@ -1873,16 +1866,18 @@ function CampaignModal({
 }) {
   const campaign = state.mode === "edit" ? state.campaign : null;
   const canDelete = campaign ? campaign.transactionCount === 0 : false;
-  const [copyState, setCopyState] = useState<"idle" | "original-copied" | "localized-copied" | "error">("idle");
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+
+  const appOrigin = useSyncExternalStore(
+    () => () => {},
+    () => process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
+    () => process.env.NEXT_PUBLIC_APP_URL || "",
+  );
 
   const statementText = campaign
-    ? campaignStatementText(campaign, `https://parami-eight.vercel.app${publicCampaignPath(campaign.code)}`)
+    ? campaignStatementText(campaign, `${appOrigin.replace(/\/$/, "")}${publicCampaignPath(campaign.code)}`)
     : "";
-  const localizedStatementText = campaign
-    ? campaignStatementText(campaign, `https://parami-eight.vercel.app${publicCampaignPath(campaign.code)}`, true)
-    : "";
-
-  async function copyStatement(text: string, copiedState: "original-copied" | "localized-copied") {
+  async function copyStatement(text: string, copiedState: "copied") {
     if (!text) return;
 
     try {
@@ -1951,34 +1946,18 @@ function CampaignModal({
             <div className="mt-3 space-y-4">
               <div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-900">Mẫu nguyên bản</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-900">Mẫu sao kê</h4>
                   <button
                     type="button"
-                    onClick={() => copyStatement(statementText, "original-copied")}
+                    onClick={() => copyStatement(statementText, "copied")}
                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-medium text-white hover:bg-amber-800"
                   >
-                    {copyState === "original-copied" ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copyState === "original-copied" ? "Đã copy" : "Copy mẫu nguyên bản"}
+                    {copyState === "copied" ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copyState === "copied" ? "Đã copy" : "Copy mẫu sao kê"}
                   </button>
                 </div>
                 <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border border-amber-200 bg-white p-3 font-sans text-xs leading-5 text-zinc-700">
                   {statementText}
-                </pre>
-              </div>
-              <div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-900">Mẫu Việt hóa</h4>
-                  <button
-                    type="button"
-                    onClick={() => copyStatement(localizedStatementText, "localized-copied")}
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-medium text-white hover:bg-amber-800"
-                  >
-                    {copyState === "localized-copied" ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copyState === "localized-copied" ? "Đã copy" : "Copy mẫu Việt hóa"}
-                  </button>
-                </div>
-                <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border border-amber-200 bg-white p-3 font-sans text-xs leading-5 text-zinc-700">
-                  {localizedStatementText}
                 </pre>
               </div>
             </div>
@@ -2293,36 +2272,24 @@ function publicCampaignPath(code: string) {
   return `/thien-phap/${encodeURIComponent(code)}`;
 }
 
-function campaignStatementText(campaign: CampaignSummary, publicUrl: string, includeVietnamese = false) {
+function campaignStatementText(campaign: CampaignSummary, publicUrl: string) {
   const date = currentVietnamStatementDate();
-  const campaignLabel = campaignStatementLabel(campaign.code);
-  const income = `${campaign.income.toLocaleString("vi-VN")} VNĐ`;
+  const code = campaign.code.trim().toLocaleUpperCase("vi-VN");
+  const income = new Intl.NumberFormat("vi-VN", {
+    style: "currency", currency: "VND", maximumFractionDigits: 0,
+  }).format(campaign.income);
 
-  return `🏦 SAO KÊ ${campaignLabel}
-NGÀY ${date}
+  return `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}
 
-CHÚNG CON KÍNH CHÚC QUÝ VỊ NGÀY MỚI THẬT AN VUI, HẠNH PHÚC.
+KÍNH CHÚC QUÝ VỊ NGÀY MỚI AN VUI TRONG CHÁNH PHÁP, THUẬN DUYÊN TẠO CÁC THIỆN NGHIỆP, VUN BỒI VÀ LÀM VIÊN MÃN CÁC PĀRAMĪ.
+🙏 Kính mời quý vị cùng theo dõi thông tin thu chi mới nhất của thiện pháp ${code}: ${campaign.name.toLocaleUpperCase("vi-VN")}
 
-✍️ CON XIN PHÉP GỬI SAO KÊ ${campaignLabel}:
-${campaign.name.toLocaleUpperCase("vi-VN")}
+💰 Số tịnh tài quý vị đồng phát tâm đóng góp hiện được ghi nhận là: ${income}
+🔎 Thông tin chi tiết của từng khoản tịnh tài được cập nhật tại: ${publicUrl}
 
-💰 Tính đến sáng ngày hôm nay ${date}, chúng ta ghi nhận được tổng số tịnh tài hùn phước cho thiện pháp là:
-${income}
-
-👉 CHÚNG CON KÍNH MỜI QUÝ VỊ THEO DÕI MINH BẠCH THEO ĐƯỜNG LINK SAO KÊ DƯỚI ĐÂY:
-${publicUrl}
-
-🌺 Sādhu Sādhu Anumodana${includeVietnamese ? "\nLành thay! Lành thay! Xin tùy hỷ công đức." : ""}
-🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.${includeVietnamese ? "\nNguyện phước báu này của tôi là duyên đưa đến Niết-bàn." : ""}
-🌺 Buddhasāsanaṃ Ciraṃ Tiṭṭhatu.${includeVietnamese ? "\nNguyện Giáo pháp của Đức Phật được trường tồn lâu dài." : ""}`;
-}
-
-function campaignStatementLabel(code: string) {
-  const normalizedCode = code.trim();
-  const numberedCampaign = normalizedCode.match(/^(?:tp[-_ ]?)?(\d+)$/i);
-  return numberedCampaign
-    ? `THIỆN PHÁP ${numberedCampaign[1]}`
-    : `THIỆN PHÁP ${normalizedCode.toLocaleUpperCase("vi-VN")}`;
+🌺 Sādhu! Sādhu! Sādhu! — Lành thay! Lành thay! Lành thay!
+🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu. — Nguyện phước báu này của tôi là duyên lành đưa đến Niết-bàn.
+🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu. — Nguyện Giáo pháp của Đức Phật trường tồn lâu dài.`;
 }
 
 function currentVietnamStatementDate() {

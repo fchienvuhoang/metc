@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${data.name} | Thiện pháp`,
+    title: `${data.name} | MettaCitta`,
     description: data.description ?? `Theo dõi thu chi thiện pháp ${data.code}.`,
   };
 }

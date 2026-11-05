@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const metadata: Metadata = {
-  title: "Đăng nhập quản trị",
+  title: "Đăng nhập quản trị | MettaCitta",
 };
 
 export default async function LoginPage({ searchParams }: Props) {
@@ -25,6 +25,7 @@ export default async function LoginPage({ searchParams }: Props) {
             <LockKeyhole className="h-5 w-5" />
           </span>
           <div>
+            <p className="text-sm font-semibold text-indigo-700">MettaCitta</p>
             <h1 className="text-xl font-semibold">Đăng nhập quản trị</h1>
             <p className="mt-1 text-sm leading-6 text-zinc-600">
               Đăng nhập bằng tài khoản Google được cấp quyền để quản lý sao kê VIB và các thiện pháp.
