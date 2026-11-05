@@ -1,5 +1,5 @@
+import { BrandLogo } from "@/components/brand-logo";
 import type { Metadata } from "next";
-import { LockKeyhole } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
 import { isGoogleAuthConfigured, safeRedirectPath } from "@/lib/auth";
 
@@ -21,9 +21,7 @@ export default async function LoginPage({ searchParams }: Props) {
     <main className="flex min-h-screen items-center justify-center bg-[#f4f6ff] px-4 py-8 text-slate-950">
       <section className="w-full max-w-md rounded-xl border border-indigo-100 bg-white p-6 shadow-xl shadow-indigo-950/5">
         <div className="flex items-start gap-3">
-          <span className="rounded-lg bg-indigo-100 p-2 text-indigo-700">
-            <LockKeyhole className="h-5 w-5" />
-          </span>
+          <BrandLogo className="h-20 w-20" priority />
           <div>
             <p className="text-sm font-semibold text-indigo-700">MettaCitta</p>
             <h1 className="text-xl font-semibold">Đăng nhập quản trị</h1>

@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/brand-logo";
 import type { Metadata } from "next";
 import { ArrowRight, HeartHandshake } from "lucide-react";
 import { CampaignTransferContent } from "@/components/campaign-transfer-content";
@@ -18,7 +19,7 @@ export default async function ActiveCampaignsPage() {
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-700">
-            <HeartHandshake className="h-4 w-4" />
+            <BrandLogo className="h-16 w-16 sm:h-20 sm:w-20" priority />
             MettaCitta
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-normal sm:text-3xl">

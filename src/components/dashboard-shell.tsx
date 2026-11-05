@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
+
 import {
   AlertCircle,
   ArrowUpFromLine,
@@ -510,13 +512,16 @@ function Dashboard({ data }: { data: DashboardData }) {
     <div className="min-h-screen bg-[#f4f6ff] text-zinc-950">
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div>
+          <div className="flex items-center gap-3">
+            <BrandLogo className="h-16 w-16" priority />
+            <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
               MettaCitta · {data.workspace}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal text-zinc-950">
               Quản lý thiện pháp và sao kê
             </h1>
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
@@ -1518,7 +1523,7 @@ function TransactionDetailModal({
           >
             <X className="h-5 w-5" />
           </button>
-          <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
+          <BrandLogo className="mx-auto h-20 w-20" />
           <p id="transaction-detail-title" className="mt-3 text-sm font-semibold text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]">
             Chi tiết giao dịch
           </p>

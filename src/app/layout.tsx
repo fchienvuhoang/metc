@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  icons: { icon: "/mettacitta-logo.png", apple: "/mettacitta-logo.png" },
   title: "MettaCitta | Quản lý thiện pháp",
   description: "MettaCitta — Quản lý thiện pháp và phân loại sao kê VIB.",
 };

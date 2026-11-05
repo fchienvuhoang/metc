@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
+
 import { Download, Eye, HeartHandshake, Loader2, Search, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -70,7 +72,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-xl font-semibold tracking-tight text-[#4c173b]">MettaCitta</span>
+                <BrandLogo className="h-20 w-20 sm:h-24 sm:w-24" priority />
                 <span className="rounded-md bg-[#4c173b] px-3 py-1.5 font-mono text-xs font-semibold text-white shadow-sm">
                   Thiện pháp {data.code}
                 </span>
@@ -486,7 +488,7 @@ function PublicTransactionDetailModal({
           >
             <X className="h-5 w-5" />
           </button>
-          <span className="inline-block shrink-0 text-xl font-semibold tracking-tight">MettaCitta</span>
+          <BrandLogo className="mx-auto h-20 w-20" />
           <p id="public-transaction-detail-title" className="mt-3 text-sm font-semibold text-[#4a1838]">
             Chi tiết giao dịch
           </p>
