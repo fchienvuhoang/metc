@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum KeywordMatchType {
+  CONTAINS
+  EXACT
+  REGEX
+}
+
+enum ClassificationStatus {
+  MATCHED
+  UNMATCHED
+  MANUAL
+}
+
+enum BankWorkspace {
+  VIB
+}
+
+model BankAccount {
+  id             String            @id @default(cuid())
+  bankName       String            @default("VIB")
+  accountNumber  String            @unique
+  accountName    String?
+  currency       String            @default("VND")
+  currentBalance Decimal           @default(0) @db.Decimal(18, 2)
+  balanceAsOf    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  workspace      BankWorkspace     @default(VIB)
+  importBatches  ImportBatch[]
+  transactions   BankTransaction[]
+
+  @@index([updatedAt])
+}
+
+model ImportBatch {
+  id             String            @id @default(cuid())
+  sourceLabel    String            @default("Sao kê VIB Excel")
+  sourceBank     String            @default("VIB")
+  accountId      String?
+  account        BankAccount?      @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  fromDate       DateTime?
+  toDate         DateTime?
+  openingBalance Decimal?          @db.Decimal(18, 2)
+  closingBalance Decimal?          @db.Decimal(18, 2)
+  totalRows      Int               @default(0)
+  insertedRows   Int               @default(0)
+  duplicateRows  Int               @default(0)
+  unmatchedRows  Int               @default(0)
+  importedAt     DateTime          @default(now())
+  workspace      BankWorkspace     @default(VIB)
+  transactions   BankTransaction[]
+
+  @@index([importedAt])
+}
+
+model Campaign {
+  id                       String                    @id @default(cuid())
+  code                     String                    @unique
+  name                     String
+  description              String?
+  status                   CampaignStatus            @default(ACTIVE)
+  targetAmount             Decimal?                  @db.Decimal(18, 2)
+  startDate                DateTime?
+  endDate                  DateTime?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  workspace                BankWorkspace             @default(VIB)
+  keywords                 CampaignKeyword[]
+  transactions             BankTransaction[]
+  transactionAllocations   TransactionAllocation[]
+  expenses                 Expense[]
+  openingBalanceAllocation OpeningBalanceAllocation?
+
+  @@index([status, createdAt])
+}
+
+model OpeningBalance {
+  id                 String                     @id @default("system-opening-balance")
+  cutoffDate         DateTime
+  bankBalance        Decimal                    @db.Decimal(18, 2)
+  unallocatedBalance Decimal                    @db.Decimal(18, 2)
+  note               String?                    @db.Text
+  createdAt          DateTime                   @default(now())
+  workspace          BankWorkspace              @unique
+  allocations        OpeningBalanceAllocation[]
+}
+
+model OpeningBalanceAllocation {
+  id               String         @id @default(cuid())
+  openingBalanceId String
+  openingBalance   OpeningBalance @relation(fields: [openingBalanceId], references: [id], onDelete: Restrict)
+  campaignId       String         @unique
+  campaign         Campaign       @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  amount           Decimal        @db.Decimal(18, 2)
+
+  @@index([openingBalanceId])
+}
+
+model CampaignKeyword {
+  id                String           @id @default(cuid())
+  campaignId        String
+  campaign          Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  keyword           String
+  normalizedKeyword String
+  matchType         KeywordMatchType @default(CONTAINS)
+  active            Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+
+  @@unique([campaignId, normalizedKeyword, matchType])
+  @@index([normalizedKeyword])
+}
+
+model BankTransaction {
+  id                    String               @id @default(cuid())
+  accountId             String?
+  account               BankAccount?         @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  importBatchId         String?
+  importBatch           ImportBatch?         @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  campaignId            String?
+  campaign              Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  transactionDate       DateTime
+  statementRow          Int?
+  description           String               @db.Text
+  normalizedDescription String               @db.Text
+  transactionCode       String               @unique
+  debitAmount           Decimal              @default(0) @db.Decimal(18, 2)
+  creditAmount          Decimal              @default(0) @db.Decimal(18, 2)
+  balanceAfter          Decimal?             @db.Decimal(18, 2)
+  matchedKeyword        String?
+  classificationStatus  ClassificationStatus @default(UNMATCHED)
+  raw                   Json?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  workspace             BankWorkspace        @default(VIB)
+  allocations           TransactionAllocation[]
+  groupedContribution   GroupedContribution?
+
+  @@index([transactionDate, statementRow, createdAt])
+  @@index([campaignId, transactionDate])
+  @@index([campaignId, transactionDate, createdAt, statementRow])
+  @@index([classificationStatus])
+  @@index([creditAmount])
+}
+
+model GroupedContribution {
+  id            String              @id @default(cuid())
+  transactionId String              @unique
+  transaction   BankTransaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  title         String              @default("Phương danh thí chủ hùn phước")
+  note          String?             @db.Text
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  entries       ContributionEntry[]
+}
+
+model ContributionEntry {
+  id        String              @id @default(cuid())
+  batchId   String
+  batch     GroupedContribution @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  donorName String
+  amount    Decimal             @db.Decimal(18, 2)
+  note      String?             @db.Text
+  sortOrder Int                 @default(0)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([batchId, sortOrder])
+}
+
+model TransactionAllocation {
+  id            String          @id @default(cuid())
+  transactionId String
+  transaction   BankTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  campaignId    String
+  campaign      Campaign        @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  amount        Decimal         @db.Decimal(18, 2)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([transactionId, campaignId])
+  @@index([campaignId, transactionId])
+}
+
+model Expense {
+  id         String    @id @default(cuid())
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  title      String
+  payee      String?
+  note       String?   @db.Text
+  amount     Decimal   @db.Decimal(18, 2)
+  spentAt    DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  workspace  BankWorkspace @default(VIB)
+
+  @@index([spentAt])
+  @@index([campaignId, spentAt])
+}
