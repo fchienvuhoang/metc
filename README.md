@@ -41,7 +41,7 @@ http://localhost:3000/api/auth/google/callback
 https://your-domain.com/api/auth/google/callback
 ```
 
-Hệ thống chỉ cho hai email Google đã xác minh đăng nhập quản trị: `phuongtu213@gmail.com` và `fchienvuhoang@gmail.com`. Nếu OAuth app đang ở chế độ Testing, thêm cả hai vào Test users của Google. Luồng đăng nhập dùng authorization code, state và PKCE; phiên quản trị hết hạn sau 7 ngày. Đăng nhập bằng mật khẩu đã được tắt.
+Hệ thống chỉ cho ba email Google đã xác minh đăng nhập quản trị: `phuongtu213@gmail.com`, `fchienvuhoang@gmail.com` và `ntluc.han@gmail.com`. Nếu OAuth app đang ở chế độ Testing, thêm cả ba vào Test users của Google. Luồng đăng nhập dùng authorization code, state và PKCE; phiên quản trị hết hạn sau 7 ngày. Đăng nhập bằng mật khẩu đã được tắt.
 
 DB mới dùng toàn bộ migration trong `prisma/migrations`; không cần tạo lại migration khởi tạo. `pnpm db:deploy` có thể chạy lại an toàn. Không chạy `db:push` thay cho migration trên môi trường triển khai.
 
