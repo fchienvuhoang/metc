@@ -2,6 +2,7 @@
 
 import type { BankWorkspace } from "@prisma/client";
 import { publicCampaignPath } from "@/lib/workspace";
+import { campaignStatementsText } from "@/lib/campaign-statement";
 import { BrandLogo } from "@/components/brand-logo";
 
 import {
@@ -927,6 +928,8 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
         </section>
         {campaignModal ? (
           <CampaignModal
+            key={campaignModal.mode === "edit" ? campaignModal.campaign.id : "create"}
+            campaigns={data.campaigns}
             state={campaignModal}
             error={error}
             isSaving={isSavingCampaign}
@@ -1921,6 +1924,7 @@ function OpeningBalanceModal({
 }
 
 function CampaignModal({
+  campaigns,
   state,
   error,
   isSaving,
@@ -1930,6 +1934,7 @@ function CampaignModal({
   onUpdate,
   onDelete,
 }: {
+  campaigns: CampaignSummary[];
   state: CampaignModalState;
   error: string | null;
   isSaving: boolean;
@@ -1941,6 +1946,9 @@ function CampaignModal({
 }) {
   const campaign = state.mode === "edit" ? state.campaign : null;
   const canDelete = campaign ? campaign.transactionCount === 0 : false;
+  const [statementCampaignIds, setStatementCampaignIds] = useState<string[]>(campaign ? [campaign.id] : []);
+  const statementCampaigns = campaigns.filter((item) => item.workspace === campaign?.workspace);
+  const selectedStatementCampaigns = statementCampaigns.filter((item) => statementCampaignIds.includes(item.id));
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
 
   const appOrigin = useSyncExternalStore(
@@ -1949,9 +1957,11 @@ function CampaignModal({
     () => process.env.NEXT_PUBLIC_APP_URL || "",
   );
 
-  const statementText = campaign
-    ? campaignStatementText(campaign, `${appOrigin.replace(/\/$/, "")}${publicCampaignPath(campaign.code, campaign.workspace)}`)
-    : "";
+  const statementText = campaignStatementsText(selectedStatementCampaigns, appOrigin);
+  function updateStatementSelection(ids: string[]) {
+    setStatementCampaignIds(ids);
+    setCopyState("idle");
+  }
   async function copyStatement(text: string, copiedState: "copied") {
     if (!text) return;
 
@@ -2016,8 +2026,30 @@ function CampaignModal({
           <section className="border-b border-zinc-200 bg-amber-50/60 px-5 py-4">
             <div>
               <h3 className="text-sm font-semibold text-zinc-950">Mẫu sao kê để chia sẻ</h3>
-              <p className="mt-1 text-xs text-zinc-500">Ngày, thiện pháp, tổng hùn phước và link được cập nhật tự động.</p>
+              <p className="mt-1 text-xs text-zinc-500">Chọn một hoặc nhiều thiện pháp để gộp vào cùng một nội dung sao kê. Mỗi thiện pháp có số tiền và link chi tiết riêng.</p>
             </div>
+            <fieldset className="mt-3 rounded-md border border-amber-200 bg-white p-3">
+              <legend className="px-1 text-xs font-semibold text-amber-900">Thiện pháp trong mẫu sao kê ({selectedStatementCampaigns.length})</legend>
+              <div className="mb-2 flex gap-3 text-xs font-medium">
+                <button type="button" onClick={() => updateStatementSelection(statementCampaigns.map((item) => item.id))} className="text-amber-800 hover:underline">Chọn tất cả</button>
+                <button type="button" onClick={() => updateStatementSelection([])} className="text-zinc-500 hover:underline">Bỏ chọn tất cả</button>
+              </div>
+              <div className="max-h-48 space-y-1 overflow-y-auto">
+                {statementCampaigns.map((item) => (
+                  <label key={item.id} className="flex cursor-pointer items-start gap-2 rounded px-2 py-2 text-sm hover:bg-amber-50">
+                    <input
+                      type="checkbox"
+                      checked={statementCampaignIds.includes(item.id)}
+                      onChange={(event) => updateStatementSelection(event.target.checked
+                        ? [...statementCampaignIds, item.id]
+                        : statementCampaignIds.filter((id) => id !== item.id))}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-amber-700"
+                    />
+                    <span><strong>{item.code}</strong> · {item.name}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <div className="mt-3 space-y-4">
               <div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -2025,14 +2057,15 @@ function CampaignModal({
                   <button
                     type="button"
                     onClick={() => copyStatement(statementText, "copied")}
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-medium text-white hover:bg-amber-800"
+                    disabled={!selectedStatementCampaigns.length}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {copyState === "copied" ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copyState === "copied" ? "Đã copy" : "Copy mẫu sao kê"}
+                    {copyState === "copied" ? "Đã copy" : `Copy mẫu sao kê (${selectedStatementCampaigns.length})`}
                   </button>
                 </div>
                 <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border border-amber-200 bg-white p-3 font-sans text-xs leading-5 text-zinc-700">
-                  {statementText}
+                  {statementText || "Chọn ít nhất một thiện pháp để tạo mẫu sao kê."}
                 </pre>
               </div>
             </div>
@@ -2341,37 +2374,6 @@ function campaignPayloadFromForm(formData: FormData) {
     status: String(formData.get("status") ?? "ACTIVE"),
     keywords: splitKeywords(String(formData.get("keywords") ?? "")),
   };
-}
-
-function campaignStatementText(campaign: CampaignSummary, publicUrl: string) {
-  const date = currentVietnamStatementDate();
-  const code = campaign.code.trim().toLocaleUpperCase("vi-VN");
-  const income = new Intl.NumberFormat("vi-VN", {
-    style: "currency", currency: "VND", maximumFractionDigits: 0,
-  }).format(campaign.income);
-
-  return `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}
-
-KÍNH CHÚC QUÝ VỊ NGÀY MỚI AN VUI TRONG CHÁNH PHÁP, THUẬN DUYÊN TẠO CÁC THIỆN NGHIỆP, VUN BỒI VÀ LÀM VIÊN MÃN CÁC PĀRAMĪ.
-🙏 Kính mời quý vị cùng theo dõi thông tin thu chi mới nhất của thiện pháp ${code}: ${campaign.name.toLocaleUpperCase("vi-VN")}
-
-💰 Số tịnh tài quý vị đồng phát tâm đóng góp hiện được ghi nhận là: ${income}
-🔎 Thông tin chi tiết của từng khoản tịnh tài được cập nhật tại: ${publicUrl}
-
-🌺 Sādhu! Sādhu! Sādhu! — Lành thay! Lành thay! Lành thay!
-🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu. — Nguyện phước báu này của tôi là duyên lành đưa đến Niết-bàn.
-🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu. — Nguyện Giáo pháp của Đức Phật trường tồn lâu dài.`;
-}
-
-function currentVietnamStatementDate() {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).formatToParts(new Date());
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.day}.${values.month}.${values.year}`;
 }
 
 async function readJson<T>(response: Response): Promise<T> {
