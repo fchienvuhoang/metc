@@ -1,0 +1,40 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { PublicCampaignView } from "@/components/public-campaign-view";
+import { getCachedPublicCampaignData, getCachedPublicCampaignMeta } from "@/lib/public-campaign";
+
+type Props = {
+  params: Promise<{
+    code: string;
+  }>;
+};
+
+export const dynamic = "force-static";
+export const revalidate = false;
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { code } = await params;
+  const data = await getCachedPublicCampaignMeta(code, "BIDV");
+
+  if (!data) {
+    return {
+      title: "Không tìm thấy thiện pháp",
+    };
+  }
+
+  return {
+    title: `${data.name} | MettaCitta`,
+    description: data.description ?? `Theo dõi thu chi thiện pháp ${data.code}.`,
+  };
+}
+
+export default async function PublicCampaignPage({ params }: Props) {
+  const { code } = await params;
+  const data = await getCachedPublicCampaignData(code, "BIDV");
+
+  if (!data) {
+    notFound();
+  }
+
+  return <PublicCampaignView data={data} />;
+}

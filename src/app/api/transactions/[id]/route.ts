@@ -82,7 +82,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     });
 
     const affectedCampaigns = await prisma.campaign.findMany({
-      where: { id: { in: requestedCampaignIds } },
+      where: { id: { in: requestedCampaignIds }, workspace },
       select: { code: true },
     });
 
@@ -90,7 +90,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       previousTransaction?.campaign?.code,
       ...previousTransaction.allocations.map((item) => item.campaign.code),
       ...affectedCampaigns.map((item) => item.code),
-    ]);
+    ], workspace);
 
     return NextResponse.json(transaction);
   } catch (error) {

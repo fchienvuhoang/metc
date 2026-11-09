@@ -1,3 +1,4 @@
+import type { BankWorkspace } from "@prisma/client";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { decimalToNumber } from "@/lib/money";
 import { getPrisma, retryTransientDatabaseRead } from "@/lib/prisma";
@@ -62,11 +63,11 @@ export type PublicCampaignListItem = {
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 const MONTHLY_EXPENSE_CAMPAIGN_CODES = new Set(["quy-hang-thang", "quy-nhom-1"]);
 
-export async function getPublicCampaignList(): Promise<PublicCampaignListItem[]> {
+export async function getPublicCampaignList(workspace: BankWorkspace = "VIB"): Promise<PublicCampaignListItem[]> {
   const prisma = getPrisma();
   return retryTransientDatabaseRead(() => prisma.campaign.findMany({
     where: {
-      workspace: "VIB",
+      workspace,
       status: "ACTIVE",
     },
     orderBy: { createdAt: "asc" },
@@ -78,20 +79,20 @@ export async function getPublicCampaignList(): Promise<PublicCampaignListItem[]>
   }));
 }
 
-export function getCachedPublicCampaignList() {
+export function getCachedPublicCampaignList(workspace: BankWorkspace = "VIB") {
   return unstable_cache(
-    () => getPublicCampaignList(),
-    ["public-campaign-list"],
-    { revalidate: false, tags: [PUBLIC_CAMPAIGN_LIST_TAG] },
+    () => getPublicCampaignList(workspace),
+    ["public-campaign-list", workspace],
+    { revalidate: false, tags: [`${PUBLIC_CAMPAIGN_LIST_TAG}:${workspace}`] },
   )();
 }
 
-export async function getPublicCampaignMeta(code: string) {
+export async function getPublicCampaignMeta(code: string, workspace: BankWorkspace = "VIB") {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);
 
   return retryTransientDatabaseRead(() => prisma.campaign.findUnique({
-    where: { code: normalizedCode },
+    where: { workspace_code: { workspace, code: normalizedCode } },
     select: {
       code: true,
       name: true,
@@ -100,32 +101,32 @@ export async function getPublicCampaignMeta(code: string) {
   }));
 }
 
-function publicCampaignMetaTag(code: string) {
-  return `public-campaign-meta:${makeCampaignCode(code)}`;
+function publicCampaignMetaTag(code: string, workspace: BankWorkspace) {
+  return `public-campaign-meta:${workspace}:${makeCampaignCode(code)}`;
 }
 
-function publicCampaignDataTag(code: string) {
-  return `public-campaign-data:${makeCampaignCode(code)}`;
+function publicCampaignDataTag(code: string, workspace: BankWorkspace) {
+  return `public-campaign-data:${workspace}:${makeCampaignCode(code)}`;
 }
 
-export function getCachedPublicCampaignMeta(code: string) {
+export function getCachedPublicCampaignMeta(code: string, workspace: BankWorkspace = "VIB") {
   const normalizedCode = makeCampaignCode(code);
   return unstable_cache(
-    () => getPublicCampaignMeta(normalizedCode),
-    ["public-campaign-meta", normalizedCode],
-    { revalidate: false, tags: [publicCampaignMetaTag(normalizedCode)] },
+    () => getPublicCampaignMeta(normalizedCode, workspace),
+    ["public-campaign-meta", workspace, normalizedCode],
+    { revalidate: false, tags: [publicCampaignMetaTag(normalizedCode, workspace)] },
   )();
 }
 
-export async function getPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
-  return retryTransientDatabaseRead(() => loadPublicCampaignData(code));
+export async function getPublicCampaignData(code: string, workspace: BankWorkspace = "VIB"): Promise<PublicCampaignData | null> {
+  return retryTransientDatabaseRead(() => loadPublicCampaignData(code, workspace));
 }
 
-async function loadPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
+async function loadPublicCampaignData(code: string, workspace: BankWorkspace = "VIB"): Promise<PublicCampaignData | null> {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);
   const campaign = await prisma.campaign.findUnique({
-    where: { code: normalizedCode },
+    where: { workspace_code: { workspace, code: normalizedCode } },
     select: {
       id: true,
       code: true,
@@ -144,6 +145,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
   const [transactionSums, transactions, monthlyTransactions, openingAllocation, allocatedTransactions, groupedContributionBatches] = await Promise.all([
     prisma.bankTransaction.aggregate({
       where: {
+        workspace,
         campaignId: campaign.id,
       },
       _sum: {
@@ -154,6 +156,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     }),
     prisma.bankTransaction.findMany({
       where: {
+        workspace,
         campaignId: campaign.id,
       },
       select: {
@@ -182,6 +185,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     hasMonthlyExpenseStatistics
       ? prisma.bankTransaction.findMany({
           where: {
+            workspace,
             campaignId: campaign.id,
             OR: [
               { creditAmount: { gt: 0 } },
@@ -203,7 +207,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
       select: { amount: true },
     }),
     prisma.transactionAllocation.findMany({
-      where: { campaignId: campaign.id },
+      where: { campaignId: campaign.id, transaction: { workspace } },
       select: {
         amount: true,
         transaction: {
@@ -222,7 +226,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
       orderBy: { transaction: { transactionDate: "desc" } },
     }),
     prisma.groupedContribution.findMany({
-      where: { transaction: { campaignId: campaign.id, creditAmount: { gt: 0 } } },
+      where: { transaction: { workspace, campaignId: campaign.id, creditAmount: { gt: 0 } } },
       select: { _count: { select: { entries: true } } },
     }),
   ]);
@@ -373,48 +377,48 @@ function transactionMonth(date: Date) {
   return `${year}-${month}`;
 }
 
-export function getCachedPublicCampaignData(code: string) {
+export function getCachedPublicCampaignData(code: string, workspace: BankWorkspace = "VIB") {
   const normalizedCode = makeCampaignCode(code);
   return unstable_cache(
-    () => getPublicCampaignData(normalizedCode),
-    ["public-campaign-data-v10", normalizedCode],
-    { revalidate: false, tags: [publicCampaignDataTag(normalizedCode)] },
+    () => getPublicCampaignData(normalizedCode, workspace),
+    ["public-campaign-data-v11", workspace, normalizedCode],
+    { revalidate: false, tags: [publicCampaignDataTag(normalizedCode, workspace)] },
   )();
 }
 
-export function invalidatePublicCampaignCache(codes: Iterable<string | null | undefined>) {
+export function invalidatePublicCampaignCache(codes: Iterable<string | null | undefined>, workspace: BankWorkspace = "VIB") {
   const normalizedCodes = new Set(
     [...codes].filter((code): code is string => Boolean(code)).map(makeCampaignCode),
   );
 
   for (const code of normalizedCodes) {
-    revalidateTag(publicCampaignDataTag(code), { expire: 0 });
+    revalidateTag(publicCampaignDataTag(code, workspace), { expire: 0 });
   }
 
   return [...normalizedCodes];
 }
 
-export function invalidatePublicCampaignDefinitionCache(codes: Iterable<string | null | undefined>) {
-  const normalizedCodes = invalidatePublicCampaignCache(codes);
+export function invalidatePublicCampaignDefinitionCache(codes: Iterable<string | null | undefined>, workspace: BankWorkspace = "VIB") {
+  const normalizedCodes = invalidatePublicCampaignCache(codes, workspace);
   for (const code of normalizedCodes) {
-    revalidateTag(publicCampaignMetaTag(code), { expire: 0 });
+    revalidateTag(publicCampaignMetaTag(code, workspace), { expire: 0 });
   }
-  revalidateTag(PUBLIC_CAMPAIGN_LIST_TAG, { expire: 0 });
+  revalidateTag(`${PUBLIC_CAMPAIGN_LIST_TAG}:${workspace}`, { expire: 0 });
   return normalizedCodes;
 }
 
-export async function warmPublicCampaignCaches(codes: Iterable<string>) {
+export async function warmPublicCampaignCaches(codes: Iterable<string>, workspace: BankWorkspace = "VIB") {
   const normalizedCodes = [...new Set([...codes].map(makeCampaignCode))];
-  await Promise.all(normalizedCodes.map((code) => getCachedPublicCampaignData(code)));
+  await Promise.all(normalizedCodes.map((code) => getCachedPublicCampaignData(code, workspace)));
 }
 
-export async function warmPublicCampaignDefinitionCaches(codes: Iterable<string>) {
+export async function warmPublicCampaignDefinitionCaches(codes: Iterable<string>, workspace: BankWorkspace = "VIB") {
   const normalizedCodes = [...new Set([...codes].map(makeCampaignCode))];
   await Promise.all([
-    getCachedPublicCampaignList(),
+    getCachedPublicCampaignList(workspace),
     ...normalizedCodes.flatMap((code) => [
-      getCachedPublicCampaignMeta(code),
-      getCachedPublicCampaignData(code),
+      getCachedPublicCampaignMeta(code, workspace),
+      getCachedPublicCampaignData(code, workspace),
     ]),
   ]);
 }

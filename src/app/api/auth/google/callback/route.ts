@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_SESSION_COOKIE, OAUTH_STATE_COOKIE, createAdminSessionToken, getAdminSessionMaxAge, isAllowedAdminEmail, isGoogleAuthConfigured, readAuthPayload, safeRedirectPath } from "@/lib/auth";
+import { ADMIN_SESSION_COOKIE, OAUTH_STATE_COOKIE, createAdminSessionToken, getAdminSessionMaxAge, isAllowedAdminEmail, getAllowedWorkspaces, isGoogleAuthConfigured, readAuthPayload, safeRedirectPath } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const user = await userResponse.json();
     if (user.email_verified !== true || typeof user.email !== "string" || !isAllowedAdminEmail(user.email)) return failure("access_denied");
     const response = NextResponse.redirect(new URL(safeRedirectPath(state.next), origin));
-    response.cookies.set(ADMIN_SESSION_COOKIE, await createAdminSessionToken(user.email), {
+    response.cookies.set(ADMIN_SESSION_COOKIE, await createAdminSessionToken(user.email, getAllowedWorkspaces(user.email)[0]), {
       httpOnly: true, maxAge: getAdminSessionMaxAge(), path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production",
     });
     return finish(response);

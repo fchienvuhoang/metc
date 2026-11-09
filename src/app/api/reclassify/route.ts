@@ -11,10 +11,10 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    await getWorkspaceFromRequest(request);
-    const result = await reclassifyImportedTransactions();
-    const affectedCodes = invalidatePublicCampaignCache(result.affectedCampaignCodes);
-    await warmPublicCampaignCaches(affectedCodes);
+    const workspace = await getWorkspaceFromRequest(request);
+    const result = await reclassifyImportedTransactions(workspace);
+    const affectedCodes = invalidatePublicCampaignCache(result.affectedCampaignCodes, workspace);
+    await warmPublicCampaignCaches(affectedCodes, workspace);
     return NextResponse.json(result);
   } catch (error) {
     return apiError(error);

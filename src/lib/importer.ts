@@ -4,6 +4,7 @@ import { classifyDescription, type KeywordRule } from "@/lib/classifier";
 import { toPrismaDecimal } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
 import { normalizeTransferText } from "@/lib/text";
+import { parseBidvStatement } from "@/lib/bidv";
 import { parseVibStatement } from "@/lib/vib";
 
 export type ImportResult = {
@@ -24,9 +25,12 @@ type TransactionClient = Omit<
 >;
 
 export async function importVibStatement(fileBuffer: Buffer, fileName: string) {
+  return importBankStatement(fileBuffer, fileName, "VIB");
+}
+
+export async function importBankStatement(fileBuffer: Buffer, fileName: string, workspace: BankWorkspace, password?: string) {
   const prisma = getPrisma();
-  const workspace: BankWorkspace = "VIB";
-  const parsed = await parseVibStatement(fileBuffer);
+  const parsed = workspace === "BIDV" ? await parseBidvStatement(fileBuffer, password) : await parseVibStatement(fileBuffer);
   const rules = await loadKeywordRules(prisma, workspace);
   const openingBalance = await prisma.openingBalance.findUnique({
     where: { workspace },
@@ -52,11 +56,12 @@ export async function importVibStatement(fileBuffer: Buffer, fileName: string) {
   return prisma.$transaction(async (tx: TransactionClient) => {
     const accountNumber = parsed.meta.accountNumber;
     const account = await tx.bankAccount.upsert({
-      where: { accountNumber },
+      where: { workspace_accountNumber: { workspace, accountNumber } },
       update: {
         workspace,
         bankName: parsed.meta.sourceBank,
         currency: parsed.meta.currency,
+        accountName: parsed.meta.accountName,
         currentBalance: toPrismaDecimal(parsed.meta.closingBalance ?? 0),
         balanceAsOf: parsed.meta.toDate,
       },
@@ -65,6 +70,7 @@ export async function importVibStatement(fileBuffer: Buffer, fileName: string) {
         bankName: parsed.meta.sourceBank,
         accountNumber,
         currency: parsed.meta.currency,
+        accountName: parsed.meta.accountName,
         currentBalance: toPrismaDecimal(parsed.meta.closingBalance ?? 0),
         balanceAsOf: parsed.meta.toDate,
       },
@@ -78,7 +84,7 @@ export async function importVibStatement(fileBuffer: Buffer, fileName: string) {
         accountId: account.id,
         fromDate: parsed.meta.fromDate,
         toDate: parsed.meta.toDate,
-        openingBalance: null,
+        openingBalance: parsed.meta.openingBalance == null ? null : toPrismaDecimal(parsed.meta.openingBalance),
         closingBalance:
           parsed.meta.closingBalance == null ? null : toPrismaDecimal(parsed.meta.closingBalance),
         totalRows: parsed.rows.length,
@@ -156,9 +162,8 @@ export async function importVibStatement(fileBuffer: Buffer, fileName: string) {
   });
 }
 
-export async function reclassifyImportedTransactions() {
+export async function reclassifyImportedTransactions(workspace: BankWorkspace) {
   const prisma = getPrisma();
-  const workspace: BankWorkspace = "VIB";
   const rules = await loadKeywordRules(prisma, workspace);
   const transactions = await prisma.bankTransaction.findMany({
     where: {

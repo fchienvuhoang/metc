@@ -81,8 +81,8 @@ export async function POST(request: Request) {
       where: { id: { in: campaignIds }, workspace },
       select: { code: true },
     });
-    const affectedCodes = invalidatePublicCampaignCache(codes.map((item) => item.code));
-    await warmPublicCampaignCaches(affectedCodes);
+    const affectedCodes = invalidatePublicCampaignCache(codes.map((item) => item.code), workspace);
+    await warmPublicCampaignCaches(affectedCodes, workspace);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

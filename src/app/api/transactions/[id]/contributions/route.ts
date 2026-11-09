@@ -85,8 +85,8 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       });
     });
 
-    const affectedCodes = invalidatePublicCampaignCache([transaction.campaign?.code]);
-    await warmPublicCampaignCaches(affectedCodes);
+    const affectedCodes = invalidatePublicCampaignCache([transaction.campaign?.code], workspace);
+    await warmPublicCampaignCaches(affectedCodes, workspace);
 
     return NextResponse.json({
       id: batch.id,
@@ -118,8 +118,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     }
 
     await prisma.groupedContribution.deleteMany({ where: { transactionId: id } });
-    const affectedCodes = invalidatePublicCampaignCache([transaction.campaign?.code]);
-    await warmPublicCampaignCaches(affectedCodes);
+    const affectedCodes = invalidatePublicCampaignCache([transaction.campaign?.code], workspace);
+    await warmPublicCampaignCaches(affectedCodes, workspace);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return apiError(error);

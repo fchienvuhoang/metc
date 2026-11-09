@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const keywords = uniqueKeywords([body.code, ...body.keywords]);
 
     const existingCampaign = await prisma.campaign.findUnique({
-      where: { code },
+      where: { workspace_code: { workspace, code } },
       select: { name: true },
     });
     if (existingCampaign) {
@@ -78,8 +78,8 @@ export async function POST(request: Request) {
         keywords: true,
       },
     });
-    const affectedCodes = invalidatePublicCampaignDefinitionCache([campaign.code]);
-    await warmPublicCampaignDefinitionCaches(affectedCodes);
+    const affectedCodes = invalidatePublicCampaignDefinitionCache([campaign.code], workspace);
+    await warmPublicCampaignDefinitionCaches(affectedCodes, workspace);
 
     return NextResponse.json(campaign, { status: 201 });
   } catch (error) {

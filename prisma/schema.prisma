@@ -26,12 +26,13 @@ enum ClassificationStatus {
 
 enum BankWorkspace {
   VIB
+  BIDV
 }
 
 model BankAccount {
   id             String            @id @default(cuid())
   bankName       String            @default("VIB")
-  accountNumber  String            @unique
+  accountNumber  String
   accountName    String?
   currency       String            @default("VND")
   currentBalance Decimal           @default(0) @db.Decimal(18, 2)
@@ -42,6 +43,7 @@ model BankAccount {
   importBatches  ImportBatch[]
   transactions   BankTransaction[]
 
+  @@unique([workspace, accountNumber])
   @@index([updatedAt])
 }
 
@@ -68,7 +70,7 @@ model ImportBatch {
 
 model Campaign {
   id                       String                    @id @default(cuid())
-  code                     String                    @unique
+  code                     String
   name                     String
   description              String?
   status                   CampaignStatus            @default(ACTIVE)
@@ -84,6 +86,7 @@ model Campaign {
   expenses                 Expense[]
   openingBalanceAllocation OpeningBalanceAllocation?
 
+  @@unique([workspace, code])
   @@index([status, createdAt])
 }
 
@@ -135,7 +138,7 @@ model BankTransaction {
   statementRow          Int?
   description           String               @db.Text
   normalizedDescription String               @db.Text
-  transactionCode       String               @unique
+  transactionCode       String
   debitAmount           Decimal              @default(0) @db.Decimal(18, 2)
   creditAmount          Decimal              @default(0) @db.Decimal(18, 2)
   balanceAfter          Decimal?             @db.Decimal(18, 2)
@@ -148,6 +151,8 @@ model BankTransaction {
   allocations           TransactionAllocation[]
   groupedContribution   GroupedContribution?
 
+  @@unique([workspace, transactionCode])
+  @@index([workspace, transactionDate])
   @@index([transactionDate, statementRow, createdAt])
   @@index([campaignId, transactionDate])
   @@index([campaignId, transactionDate, createdAt, statementRow])

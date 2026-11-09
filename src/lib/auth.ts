@@ -3,14 +3,22 @@ import type { BankWorkspace } from "@prisma/client";
 export const ADMIN_SESSION_COOKIE = "metc_admin_session";
 export const OAUTH_STATE_COOKIE = "metc_oauth_state";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
-const ADMIN_EMAILS = new Set(["phuongtu213@gmail.com", "fchienvuhoang@gmail.com"]);
+const EMAIL_WORKSPACES: Record<string, BankWorkspace[]> = {
+  "phuongtu213@gmail.com": ["VIB"],
+  "fchienvuhoang@gmail.com": ["VIB", "BIDV"],
+  "ntluc.han@gmail.com": ["BIDV"],
+};
+
+export function getAllowedWorkspaces(email: string): BankWorkspace[] {
+  return [...(EMAIL_WORKSPACES[email.trim().toLowerCase()] ?? [])];
+}
 
 export function isGoogleAuthConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.AUTH_SECRET);
 }
 
 export function isAllowedAdminEmail(email: string) {
-  return ADMIN_EMAILS.has(email.trim().toLowerCase());
+  return getAllowedWorkspaces(email).length > 0;
 }
 
 export function getAdminSessionMaxAge() {
@@ -35,15 +43,24 @@ export async function readAuthPayload(token: string | undefined): Promise<Record
   }
 }
 
-export async function createAdminSessionToken(email: string) {
+export async function createAdminSessionToken(email: string, requestedWorkspace?: BankWorkspace) {
   const normalized = email.trim().toLowerCase();
-  if (!isAllowedAdminEmail(normalized)) throw new Error("Email không có quyền quản trị.");
-  return signAuthPayload({ purpose: "admin", email: normalized, workspace: "VIB", exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS });
+  const allowed = getAllowedWorkspaces(normalized);
+  const workspace = requestedWorkspace ?? allowed[0];
+  if (!workspace || !allowed.includes(workspace)) throw new Error("Email không có quyền truy cập tenant này.");
+  return signAuthPayload({ purpose: "admin", email: normalized, workspace, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS });
+}
+
+export async function getAdminSession(token: string | undefined) {
+  const data = await readAuthPayload(token);
+  if (data?.purpose !== "admin" || typeof data.email !== "string" || (data.workspace !== "VIB" && data.workspace !== "BIDV")) return null;
+  const allowedWorkspaces = getAllowedWorkspaces(data.email);
+  if (!allowedWorkspaces.includes(data.workspace)) return null;
+  return { email: data.email, workspace: data.workspace as BankWorkspace, allowedWorkspaces, exp: data.exp as number };
 }
 
 export async function verifyAdminSessionToken(token: string | undefined): Promise<BankWorkspace | null> {
-  const data = await readAuthPayload(token);
-  return data?.purpose === "admin" && data.workspace === "VIB" && typeof data.email === "string" && isAllowedAdminEmail(data.email) ? "VIB" : null;
+  return (await getAdminSession(token))?.workspace ?? null;
 }
 
 export async function getWorkspaceFromRequest(request: Request): Promise<BankWorkspace> {
@@ -51,6 +68,8 @@ export async function getWorkspaceFromRequest(request: Request): Promise<BankWor
     .find((part) => part.startsWith(`${ADMIN_SESSION_COOKIE}=`))?.slice(ADMIN_SESSION_COOKIE.length + 1);
   const workspace = await verifyAdminSessionToken(cookie);
   if (!workspace) throw new Error("Phiên đăng nhập không hợp lệ.");
+  const expectedWorkspace = request.headers.get("x-workspace");
+  if (expectedWorkspace && expectedWorkspace !== workspace) throw new Error("Tenant đã thay đổi ở tab khác. Vui lòng tải lại trang trước khi thao tác.");
   return workspace;
 }
 

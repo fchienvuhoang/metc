@@ -2,28 +2,7 @@ import { createHash } from "node:crypto";
 import ExcelJS from "exceljs";
 import { normalizeTransferText } from "@/lib/text";
 
-export type VibTransactionRow = {
-  transactionDate: Date;
-  statementRow: number;
-  description: string;
-  transactionCode: string;
-  debitAmount: number;
-  creditAmount: number;
-  balanceAfter: number;
-  raw: Record<string, unknown>;
-};
-
-export type ParsedVibStatement = {
-  meta: {
-    sourceBank: "VIB";
-    currency: string;
-    accountNumber: string;
-    fromDate: Date;
-    toDate: Date;
-    closingBalance: number;
-  };
-  rows: VibTransactionRow[];
-};
+import type { BankStatementRow as VibTransactionRow, ParsedBankStatement as ParsedVibStatement } from "@/lib/statement";
 
 const EXPECTED_HEADER = [
   "ngay giao dich transaction date",

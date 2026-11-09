@@ -60,6 +60,7 @@ export type DashboardData = {
 };
 
 export type CampaignSummary = {
+  workspace: BankWorkspace;
   id: string;
   code: string;
   name: string;
@@ -335,6 +336,7 @@ async function loadDashboardState(workspace: BankWorkspace): Promise<DashboardSt
           matchType: keyword.matchType,
           active: keyword.active,
         })),
+        workspace,
       } satisfies CampaignSummary;
     });
 

@@ -38,7 +38,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (!previousCampaign) return NextResponse.json({ error: "Không tìm thấy thiện pháp." }, { status: 404 });
 
     const duplicateCampaign = await prisma.campaign.findFirst({
-      where: { code, id: { not: id } },
+      where: { workspace, code, id: { not: id } },
       select: { name: true },
     });
     if (duplicateCampaign) {
@@ -76,8 +76,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         },
       });
     });
-    const affectedCodes = invalidatePublicCampaignDefinitionCache([previousCampaign?.code, campaign.code]);
-    await warmPublicCampaignDefinitionCaches(affectedCodes);
+    const affectedCodes = invalidatePublicCampaignDefinitionCache([previousCampaign?.code, campaign.code], workspace);
+    await warmPublicCampaignDefinitionCaches(affectedCodes, workspace);
 
     return NextResponse.json(campaign);
   } catch (error) {
@@ -118,8 +118,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     }
 
     await prisma.campaign.delete({ where: { id } });
-    invalidatePublicCampaignDefinitionCache([campaign.code]);
-    await warmPublicCampaignDefinitionCaches([]);
+    invalidatePublicCampaignDefinitionCache([campaign.code], workspace);
+    await warmPublicCampaignDefinitionCaches([], workspace);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

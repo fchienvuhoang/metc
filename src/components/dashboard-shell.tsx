@@ -1,5 +1,7 @@
 "use client";
 
+import type { BankWorkspace } from "@prisma/client";
+import { publicCampaignPath } from "@/lib/workspace";
 import { BrandLogo } from "@/components/brand-logo";
 
 import {
@@ -29,7 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import type React from "react";
 import type {
   CampaignSummary,
@@ -43,6 +45,7 @@ import { splitKeywords } from "@/lib/text";
 
 type Props = {
   state: DashboardState;
+  allowedWorkspaces: BankWorkspace[];
 };
 
 type ImportResponse = {
@@ -92,16 +95,22 @@ const statusClassNames = {
   COMPLETED: "border-zinc-200 bg-zinc-50 text-zinc-600",
 };
 
-export function DashboardShell({ state }: Props) {
+export function DashboardShell({ state, allowedWorkspaces }: Props) {
   if (!state.ok) {
     return <SetupScreen state={state} />;
   }
 
-  return <Dashboard data={state.data} />;
+  return <Dashboard key={state.data.workspace} data={state.data} allowedWorkspaces={allowedWorkspaces} />;
 }
 
-function Dashboard({ data }: { data: DashboardData }) {
+function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWorkspaces: BankWorkspace[] }) {
   const router = useRouter();
+  const workspaceFetch = useCallback((url: string, options: RequestInit = {}) => {
+    const headers = new Headers(options.headers);
+    headers.set("x-workspace", data.workspace);
+    return fetch(url, { ...options, headers });
+  }, [data.workspace]);
+  const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
   const [mainTab, setMainTab] = useState<"overview" | "transactions">("overview");
   const [activeTab, setActiveTab] = useState("all");
   const [query, setQuery] = useState("");
@@ -149,7 +158,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       if (query.trim()) params.set("query", query.trim());
 
       try {
-        const response = await fetch(`/api/transactions?${params.toString()}`, {
+        const response = await workspaceFetch(`/api/transactions?${params.toString()}`, {
           signal: controller.signal,
         });
         const result = await readJson<TransactionListResponse>(response);
@@ -169,7 +178,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [activeTab, mainTab, query, transactionPage, transactionReloadKey]);
+  }, [activeTab, mainTab, query, transactionPage, transactionReloadKey, workspaceFetch]);
 
   async function handleImport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -181,7 +190,7 @@ function Dashboard({ data }: { data: DashboardData }) {
     try {
       const form = event.currentTarget;
       const formData = new FormData(form);
-      const response = await fetch("/api/import", {
+      const response = await workspaceFetch("/api/import", {
         method: "POST",
         body: formData,
       });
@@ -206,7 +215,7 @@ function Dashboard({ data }: { data: DashboardData }) {
 
     try {
       const json = await readJson<ImportResponse>(
-        await fetch("/api/import/email", { method: "POST" }),
+        await workspaceFetch("/api/import/email", { method: "POST" }),
       );
       setImportResult(json);
       setMessage(
@@ -234,7 +243,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       const formData = new FormData(form);
       const payload = campaignPayloadFromForm(formData);
       await readJson(
-        await fetch("/api/campaigns", {
+        await workspaceFetch("/api/campaigns", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -261,7 +270,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       const formData = new FormData(event.currentTarget);
       const payload = campaignPayloadFromForm(formData);
       await readJson(
-        await fetch(`/api/campaigns/${campaignId}`, {
+        await workspaceFetch(`/api/campaigns/${campaignId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -295,7 +304,7 @@ function Dashboard({ data }: { data: DashboardData }) {
 
     try {
       await readJson(
-        await fetch(`/api/campaigns/${campaign.id}`, {
+        await workspaceFetch(`/api/campaigns/${campaign.id}`, {
           method: "DELETE",
         }),
       );
@@ -316,7 +325,7 @@ function Dashboard({ data }: { data: DashboardData }) {
 
     try {
       const result = await readJson<{ totalRows: number; matchedRows: number; unmatchedRows: number }>(
-        await fetch("/api/reclassify", { method: "POST" }),
+        await workspaceFetch("/api/reclassify", { method: "POST" }),
       );
       setMessage(
         `Đã phân loại lại ${result.totalRows} giao dịch: ${result.matchedRows} khớp, ${result.unmatchedRows} chưa khớp.`,
@@ -337,7 +346,7 @@ function Dashboard({ data }: { data: DashboardData }) {
 
     try {
       await readJson(
-        await fetch(`/api/transactions/${transactionId}`, {
+        await workspaceFetch(`/api/transactions/${transactionId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ campaignId }),
@@ -369,7 +378,7 @@ function Dashboard({ data }: { data: DashboardData }) {
     setIsBulkAssigning(true);
     try {
       const result = await readJson<{ updatedCount: number }>(
-        await fetch("/api/transactions/bulk-assign", {
+        await workspaceFetch("/api/transactions/bulk-assign", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -403,7 +412,7 @@ function Dashboard({ data }: { data: DashboardData }) {
           amount: parseMoneyInput(formData.get(`allocation-${campaign.id}`)),
         }))
         .filter((item) => item.amount > 0);
-      await readJson(await fetch(`/api/transactions/${splitTransaction.id}`, {
+      await readJson(await workspaceFetch(`/api/transactions/${splitTransaction.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ allocations }),
@@ -429,7 +438,7 @@ function Dashboard({ data }: { data: DashboardData }) {
     setMessage(null);
     setPendingTransactionId(contributionTransaction.id);
     try {
-      await readJson(await fetch(`/api/transactions/${contributionTransaction.id}/contributions`, {
+      await readJson(await workspaceFetch(`/api/transactions/${contributionTransaction.id}/contributions`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -452,7 +461,7 @@ function Dashboard({ data }: { data: DashboardData }) {
     setMessage(null);
     setPendingTransactionId(contributionTransaction.id);
     try {
-      await readJson(await fetch(`/api/transactions/${contributionTransaction.id}/contributions`, {
+      await readJson(await workspaceFetch(`/api/transactions/${contributionTransaction.id}/contributions`, {
         method: "DELETE",
       }));
       setMessage("Đã xóa danh sách nộp gộp; giao dịch ngân hàng không thay đổi.");
@@ -466,8 +475,23 @@ function Dashboard({ data }: { data: DashboardData }) {
     }
   }
 
+  async function switchWorkspace(workspace: string) {
+    if (workspace === data.workspace) return;
+    setIsSwitchingWorkspace(true);
+    setError(null);
+    try {
+      await readJson(await workspaceFetch("/api/auth/workspace", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspace }),
+      }));
+      window.location.assign("/");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Không thể chuyển tenant.");
+      setIsSwitchingWorkspace(false);
+    }
+  }
+
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await workspaceFetch("/api/auth/logout", { method: "POST" });
     router.push("/dang-nhap");
     router.refresh();
   }
@@ -486,7 +510,7 @@ function Dashboard({ data }: { data: DashboardData }) {
         amount: parseMoneyInput(formData.get(`campaign-${campaign.id}`)),
       }));
       await readJson(
-        await fetch("/api/settings/opening-balance", {
+        await workspaceFetch("/api/settings/opening-balance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -524,6 +548,12 @@ function Dashboard({ data }: { data: DashboardData }) {
             </div>
           </div>
           <div className="flex flex-col gap-2">
+            <label className="flex items-center justify-end gap-2 text-sm font-medium text-zinc-700">
+              Tenant ngân hàng
+              <select aria-label="Tenant ngân hàng" value={data.workspace} disabled={isSwitchingWorkspace || isImporting || isImportingEmail} onChange={(event) => switchWorkspace(event.target.value)} className="rounded-md border border-zinc-300 bg-white px-3 py-2">
+                {allowedWorkspaces.map((workspace) => <option key={workspace} value={workspace}>{workspace}</option>)}
+              </select>
+            </label>
             <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
               <HeaderStat label="Giao dịch" value={data.overview.transactionCount.toLocaleString("vi-VN")} />
               <HeaderStat label="Chưa phân loại" value={data.overview.unmatchedCount.toLocaleString("vi-VN")} />
@@ -572,6 +602,12 @@ function Dashboard({ data }: { data: DashboardData }) {
                     className="mt-1 block max-w-full text-xs text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-100 file:px-3 file:py-2 file:font-medium file:text-indigo-700"
                   />
                 </label>
+                {data.workspace === "BIDV" ? (
+                  <label className="block text-sm">
+                    <span className="font-medium text-zinc-800">Mật khẩu Excel khác (để trống để dùng mật khẩu đã cấu hình)</span>
+                    <input name="password" type="password" autoComplete="off" maxLength={255} className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2" />
+                  </label>
+                ) : null}
                 <button
                   disabled={isImporting}
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
@@ -606,7 +642,7 @@ function Dashboard({ data }: { data: DashboardData }) {
             </div>
 
             <div className="flex flex-col gap-3 xl:w-80">
-              <div className="rounded-md border border-indigo-200 bg-indigo-50 p-3">
+              {data.workspace === "VIB" ? <div className="rounded-md border border-indigo-200 bg-indigo-50 p-3">
                 <div className="flex items-start gap-2">
                   <Mail className="mt-0.5 h-5 w-5 shrink-0 text-indigo-700" />
                   <div>
@@ -625,7 +661,7 @@ function Dashboard({ data }: { data: DashboardData }) {
                   {isImportingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                   {isImportingEmail ? "Đang đọc Gmail..." : "Đọc Gmail và import"}
                 </button>
-              </div>
+              </div> : null}
               <button
                 type="button"
                 onClick={() => {
@@ -1194,7 +1230,7 @@ function CampaignTable({
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right">
                   <a
-                    href={publicCampaignPath(campaign.code)}
+                    href={publicCampaignPath(campaign.code, campaign.workspace)}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(event) => event.stopPropagation()}
@@ -1880,7 +1916,7 @@ function CampaignModal({
   );
 
   const statementText = campaign
-    ? campaignStatementText(campaign, `${appOrigin.replace(/\/$/, "")}${publicCampaignPath(campaign.code)}`)
+    ? campaignStatementText(campaign, `${appOrigin.replace(/\/$/, "")}${publicCampaignPath(campaign.code, campaign.workspace)}`)
     : "";
   async function copyStatement(text: string, copiedState: "copied") {
     if (!text) return;
@@ -1915,7 +1951,7 @@ function CampaignModal({
                   <MiniStat label="GD" value={campaign.transactionCount.toLocaleString("vi-VN")} />
                 </div>
                 <a
-                  href={publicCampaignPath(campaign.code)}
+                  href={publicCampaignPath(campaign.code, campaign.workspace)}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-3 inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
@@ -2271,10 +2307,6 @@ function campaignPayloadFromForm(formData: FormData) {
     status: String(formData.get("status") ?? "ACTIVE"),
     keywords: splitKeywords(String(formData.get("keywords") ?? "")),
   };
-}
-
-function publicCampaignPath(code: string) {
-  return `/thien-phap/${encodeURIComponent(code)}`;
 }
 
 function campaignStatementText(campaign: CampaignSummary, publicUrl: string) {

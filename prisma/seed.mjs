@@ -44,7 +44,7 @@ const campaigns = [
 
 for (const campaign of campaigns) {
   const saved = await prisma.campaign.upsert({
-    where: { code: campaign.code },
+    where: { workspace_code: { workspace: "VIB", code: campaign.code } },
     update: {
       name: campaign.name,
       description: campaign.description,

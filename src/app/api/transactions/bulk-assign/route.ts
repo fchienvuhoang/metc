@@ -72,7 +72,7 @@ export async function PATCH(request: Request) {
       };
     });
 
-    invalidatePublicCampaignCache(result.affectedCampaignCodes);
+    invalidatePublicCampaignCache(result.affectedCampaignCodes, workspace);
     return NextResponse.json({ updatedCount: result.updatedCount });
   } catch (error) {
     return apiError(error);

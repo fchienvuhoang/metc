@@ -26,7 +26,7 @@ export default async function LoginPage({ searchParams }: Props) {
             <p className="text-sm font-semibold text-indigo-700">MettaCitta</p>
             <h1 className="text-xl font-semibold">Đăng nhập quản trị</h1>
             <p className="mt-1 text-sm leading-6 text-zinc-600">
-              Đăng nhập bằng tài khoản Google được cấp quyền để quản lý sao kê VIB và các thiện pháp.
+              Đăng nhập bằng tài khoản Google được cấp quyền để quản lý sao kê BIDV/VIB và các thiện pháp.
             </p>
           </div>
         </div>
