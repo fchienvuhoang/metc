@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import ExcelJS from "exceljs";
 import { decrypt, isEncrypted } from "officecrypto-tool";
 import type { BankStatementRow, ParsedBankStatement } from "@/lib/statement";
+import { assertStatementBank } from "@/lib/statement-bank";
 import { normalizeTransferText } from "@/lib/text";
 
 export async function parseBidvStatement(input: Buffer, password?: string): Promise<ParsedBankStatement> {
@@ -20,10 +21,6 @@ export async function parseBidvStatement(input: Buffer, password?: string): Prom
   await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
   const sheet = workbook.worksheets[0];
   if (!sheet) throw new Error("File Excel không có sheet dữ liệu.");
-  const bankText = Array.from({ length: Math.min(sheet.rowCount, 15) }, (_, index) => sheet.getRow(index + 1).values.toString()).join(" ");
-  if (!/BIDV|Bank for Investment and Development|ĐẦU TƯ VÀ PHÁT TRIỂN/i.test(bankText)) {
-    throw new Error("File không phải sao kê BIDV. Vui lòng tải đúng file cho tenant BIDV.");
-  }
   let headerRow = 0;
   const columns: Record<string, number> = {};
   const headers: Record<string, string> = {
@@ -43,6 +40,7 @@ export async function parseBidvStatement(input: Buffer, password?: string): Prom
     }
   }
   if (!headerRow) throw new Error("Không tìm thấy bảng giao dịch theo mẫu sao kê BIDV.");
+  assertStatementBank(sheet, headerRow, "BIDV");
   const accountNumber = metadata(sheet, "so tai khoan account no");
   if (!/^\d+$/.test(accountNumber)) throw new Error("Không tìm thấy số tài khoản hợp lệ trong sao kê BIDV.");
   const accountName = metadata(sheet, "ten tai khoan account name");

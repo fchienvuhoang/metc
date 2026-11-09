@@ -29,8 +29,11 @@ export async function importVibStatement(fileBuffer: Buffer, fileName: string) {
 }
 
 export async function importBankStatement(fileBuffer: Buffer, fileName: string, workspace: BankWorkspace, password?: string) {
-  const prisma = getPrisma();
   const parsed = workspace === "BIDV" ? await parseBidvStatement(fileBuffer, password) : await parseVibStatement(fileBuffer);
+  if (parsed.meta.sourceBank !== workspace) {
+    throw new Error(`File sao kê không thuộc ngân hàng ${workspace} đang chọn.`);
+  }
+  const prisma = getPrisma();
   const rules = await loadKeywordRules(prisma, workspace);
   const openingBalance = await prisma.openingBalance.findUnique({
     where: { workspace },

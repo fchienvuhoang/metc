@@ -4,7 +4,7 @@ export const ADMIN_SESSION_COOKIE = "metc_admin_session";
 export const OAUTH_STATE_COOKIE = "metc_oauth_state";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 const EMAIL_WORKSPACES: Record<string, BankWorkspace[]> = {
-  "phuongtu213@gmail.com": ["VIB"],
+  "phuongtu213@gmail.com": ["VIB", "BIDV"],
   "fchienvuhoang@gmail.com": ["VIB", "BIDV"],
   "ntluc.han@gmail.com": ["BIDV"],
 };

@@ -57,3 +57,14 @@ test("BIDV rejects wrong-bank files, invalid dates, missing references and incon
   await assert.rejects(parseBidvStatement(await statement((s) => { s.getCell("G7").value = null; })), /số tham chiếu/);
   await assert.rejects(parseBidvStatement(await statement((s) => { s.getCell("E10").value = 51; })), /số dư cuối kỳ/);
 });
+
+test("BIDV rejects missing or conflicting bank headings and cannot use transaction text as bank identity", async () => {
+  for (const heading of ["", "Unknown bank", "VIB BIDV", "NOTBIDV"]) {
+    await assert.rejects(parseBidvStatement(await statement((sheet) => {
+      sheet.getCell("A1").value = heading;
+      sheet.getCell("F7").value = "BIDV contribution";
+    })), /không phải sao kê BIDV/);
+  }
+  const { parseVibStatement } = createLoader()("src/lib/vib.ts");
+  await assert.rejects(parseVibStatement(await statement()), /bảng giao dịch VIB/);
+});

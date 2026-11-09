@@ -29,7 +29,8 @@ test("only the permitted emails can receive sessions", async () => {
   assert.equal(await auth.verifyAdminSessionToken(await auth.createAdminSessionToken("ntluc.han@gmail.com")), "BIDV");
   assert.equal(await auth.verifyAdminSessionToken(await auth.createAdminSessionToken("fchienvuhoang@gmail.com", "BIDV")), "BIDV");
   await assert.rejects(auth.createAdminSessionToken("ntluc.han@gmail.com", "VIB"));
-  await assert.rejects(auth.createAdminSessionToken("phuongtu213@gmail.com", "BIDV"));
+  assert.equal(await auth.verifyAdminSessionToken(await auth.createAdminSessionToken("Phuongtu213@gmail.com", "BIDV")), "BIDV");
+  assert.deepEqual(auth.getAllowedWorkspaces(" Phuongtu213@gmail.com "), ["VIB", "BIDV"]);
   const revokedSession = await auth.signAuthPayload({ purpose: "admin", email: "ntluc.han@gmail.com", workspace: "VIB", exp: Date.now() / 1000 + 60 });
   assert.equal(await auth.verifyAdminSessionToken(revokedSession), null);
 });
@@ -70,7 +71,8 @@ const workspaceRoute = load("../src/app/api/auth/workspace/route.ts", { "@/lib/a
 
 test("tenant switching enforces email permissions and origin without extending expiry", async () => {
   for (const [email, current, target, status] of [
-    ["phuongtu213@gmail.com", "VIB", "BIDV", 403],
+    ["phuongtu213@gmail.com", "VIB", "BIDV", 200],
+    ["phuongtu213@gmail.com", "BIDV", "VIB", 200],
     ["ntluc.han@gmail.com", "BIDV", "VIB", 403],
     ["fchienvuhoang@gmail.com", "VIB", "BIDV", 200],
     ["fchienvuhoang@gmail.com", "BIDV", "VIB", 200],

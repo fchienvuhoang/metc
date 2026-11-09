@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import ExcelJS from "exceljs";
+import { assertStatementBank } from "@/lib/statement-bank";
 import { normalizeTransferText } from "@/lib/text";
 
 import type { BankStatementRow as VibTransactionRow, ParsedBankStatement as ParsedVibStatement } from "@/lib/statement";
@@ -30,10 +31,12 @@ export async function parseVibStatement(buffer: Buffer): Promise<ParsedVibStatem
     throw new Error("Không tìm thấy bảng giao dịch VIB trong file Excel.");
   }
 
+  assertStatementBank(worksheet, headerRow, "VIB");
+
   const accountNumber = metaValue(worksheet, "so tai khoan account number").replace(/^:\s*/, "").trim();
   const currency = metaValue(worksheet, "loai tien currency").replace(/^:\s*/, "").trim() || "VND";
   const closingBalanceText = metaValue(worksheet, "so du cuoi ky closing balance").replace(/^:\s*/, "").trim();
-  if (!accountNumber) throw new Error("Không tìm thấy số tài khoản trong sao kê VIB.");
+  if (!/^\d+$/.test(accountNumber)) throw new Error("Không tìm thấy số tài khoản trong sao kê VIB.");
 
   const rows: VibTransactionRow[] = [];
   const occurrenceByFingerprint = new Map<string, number>();

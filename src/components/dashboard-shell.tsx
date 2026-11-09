@@ -111,6 +111,8 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
     return fetch(url, { ...options, headers });
   }, [data.workspace]);
   const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
+  const switchingWorkspaceRef = useRef(false);
+  const [targetWorkspace, setTargetWorkspace] = useState<string | null>(null);
   const [mainTab, setMainTab] = useState<"overview" | "transactions">("overview");
   const [activeTab, setActiveTab] = useState("all");
   const [query, setQuery] = useState("");
@@ -475,8 +477,13 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
     }
   }
 
+  const isWorkspaceBusy = isImporting || isImportingEmail || isSavingCampaign || isReclassifying
+    || deletingCampaignId !== null || pendingTransactionId !== null || isSavingOpeningBalance || isBulkAssigning;
+
   async function switchWorkspace(workspace: string) {
-    if (workspace === data.workspace) return;
+    if (workspace === data.workspace || switchingWorkspaceRef.current || isWorkspaceBusy) return;
+    switchingWorkspaceRef.current = true;
+    setTargetWorkspace(workspace);
     setIsSwitchingWorkspace(true);
     setError(null);
     try {
@@ -486,6 +493,8 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
       window.location.assign("/");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Không thể chuyển tenant.");
+      switchingWorkspaceRef.current = false;
+      setTargetWorkspace(null);
       setIsSwitchingWorkspace(false);
     }
   }
@@ -534,6 +543,15 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
 
   return (
     <div className="min-h-screen bg-[#f4f6ff] text-zinc-950">
+      {isSwitchingWorkspace ? (
+        <div role="status" className="fixed inset-0 z-[100] flex items-center justify-center bg-white/90">
+          <div className="flex items-center gap-3 rounded-xl border border-indigo-200 bg-white px-6 py-5 text-lg font-semibold text-indigo-800 shadow-lg">
+            <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin" />
+            Đang chuyển sang {targetWorkspace}…
+          </div>
+        </div>
+      ) : null}
+      <div inert={isSwitchingWorkspace}>
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center gap-3">
@@ -548,12 +566,27 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center justify-end gap-2 text-sm font-medium text-zinc-700">
-              Tenant ngân hàng
-              <select aria-label="Tenant ngân hàng" value={data.workspace} disabled={isSwitchingWorkspace || isImporting || isImportingEmail} onChange={(event) => switchWorkspace(event.target.value)} className="rounded-md border border-zinc-300 bg-white px-3 py-2">
-                {allowedWorkspaces.map((workspace) => <option key={workspace} value={workspace}>{workspace}</option>)}
-              </select>
-            </label>
+            <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50 p-3">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-indigo-800">Ngân hàng đang quản lý</p>
+              <div role="group" aria-label="Chuyển ngân hàng" className="flex gap-2">
+                {allowedWorkspaces.map((workspace) => (
+                  <button
+                    key={workspace}
+                    type="button"
+                    aria-pressed={workspace === data.workspace}
+                    disabled={isSwitchingWorkspace || isWorkspaceBusy}
+                    onClick={() => switchWorkspace(workspace)}
+                    className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-6 py-3 text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${workspace === data.workspace
+                      ? workspace === "BIDV" ? "border-teal-700 bg-teal-700 text-white shadow-md" : "border-indigo-700 bg-indigo-700 text-white shadow-md"
+                      : "border-white bg-white text-zinc-600 hover:border-indigo-300 hover:text-indigo-800"}`}
+                  >
+                    {workspace === data.workspace ? <CheckCircle2 aria-hidden="true" className="h-5 w-5" /> : null}
+                    {workspace}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-indigo-800">Chỉ nhập sao kê {data.workspace}. Dữ liệu hai ngân hàng được quản lý riêng.</p>
+            </div>
             <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
               <HeaderStat label="Giao dịch" value={data.overview.transactionCount.toLocaleString("vi-VN")} />
               <HeaderStat label="Chưa phân loại" value={data.overview.unmatchedCount.toLocaleString("vi-VN")} />
@@ -592,7 +625,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
                   <FileSpreadsheet className="h-8 w-8 text-indigo-600" />
                   <span className="text-sm font-medium text-zinc-800">Chọn file sao kê {data.workspace}</span>
                   <span className="text-xs text-zinc-500">
-                    File Excel .xlsx, tối đa 10 MB
+                    File Excel .xlsx gốc của {data.workspace}, tối đa 10 MB. File khác ngân hàng sẽ bị từ chối.
                   </span>
                   <input
                     name="statementFile"
@@ -951,6 +984,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
           />
         ) : null}
       </main>
+      </div>
     </div>
   );
 }
