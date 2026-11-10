@@ -16,7 +16,28 @@ export function assertStatementBank(sheet: ExcelJS.Worksheet, headerRow: number,
       if (/\bbidv\b|\bbank for investment and development\b|\bngan hang (?:tmcp )?dau tu va phat trien\b/.test(normalized)) markers.add("BIDV");
     });
   }
-  if (markers.size !== 1 || !markers.has(expected)) {
+  const matchesVibExport = expected === "VIB" && markers.size === 0 && hasVibExportLayout(sheet, headerRow);
+  if (!matchesVibExport && (markers.size !== 1 || !markers.has(expected))) {
     throw new Error(`File không phải sao kê ${expected} hoặc không xác định rõ ngân hàng. Vui lòng chọn đúng file sao kê ${expected} gốc do ngân hàng xuất.`);
   }
+}
+
+// VIB's original export has no bank name in its heading. Require its complete
+// bilingual layout, not a bank name mentioned inside a transfer description.
+function hasVibExportLayout(sheet: ExcelJS.Worksheet, headerRow: number) {
+  if (sheet.name !== "Sao_ke_tai_khoan") return false;
+  const headings = new Set<string>();
+  for (let row = 1; row < headerRow; row++) {
+    for (const column of [2, 4]) {
+      headings.add(normalizeTransferText(sheet.getCell(row, column).text));
+    }
+  }
+  return [
+    "giao dich tai khoan", "account statement",
+    "so tai khoan account number", "loai tien currency",
+    "chu tai khoan account holder", "so cccd id number", "dia chi address",
+    "ngay in sao ke statement date", "thoi gian sao ke period covered",
+    "phat sinh no total debit", "phat sinh co total credit",
+    "so du dau ky opening balance", "so du cuoi ky closing balance",
+  ].every((heading) => headings.has(heading));
 }

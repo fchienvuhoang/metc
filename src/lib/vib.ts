@@ -92,6 +92,24 @@ export async function parseVibStatement(buffer: Buffer): Promise<ParsedVibStatem
   }
 
   if (!rows.length) throw new Error("Không tìm thấy giao dịch hợp lệ trong sao kê VIB.");
+  const totalDebitText = metaValue(worksheet, "phat sinh no total debit").replace(/^:\s*/, "").trim();
+  const totalCreditText = metaValue(worksheet, "phat sinh co total credit").replace(/^:\s*/, "").trim();
+  const openingBalanceText = metaValue(worksheet, "so du dau ky opening balance").replace(/^:\s*/, "").trim();
+  const debitTotal = rows.reduce((total, row) => total + row.debitAmount, 0);
+  const creditTotal = rows.reduce((total, row) => total + row.creditAmount, 0);
+  if (totalDebitText && Math.abs(parseAmount(totalDebitText, 0, "tổng phát sinh nợ", false, false) - debitTotal) > 0.01) {
+    throw new Error("Tổng phát sinh nợ không khớp các giao dịch trong sao kê VIB.");
+  }
+  if (totalCreditText && Math.abs(parseAmount(totalCreditText, 0, "tổng phát sinh có", false, false) - creditTotal) > 0.01) {
+    throw new Error("Tổng phát sinh có không khớp các giao dịch trong sao kê VIB.");
+  }
+  if (openingBalanceText && closingBalanceText) {
+    const opening = parseAmount(openingBalanceText, 0, "số dư đầu kỳ", false, false);
+    const closing = parseAmount(closingBalanceText, 0, "số dư cuối kỳ", false, false);
+    if (Math.abs(opening + creditTotal - debitTotal - closing) > 0.01) {
+      throw new Error("Số dư đầu kỳ và tổng phát sinh không khớp số dư cuối kỳ VIB.");
+    }
+  }
   const timestamps = rows.map((row) => row.transactionDate.getTime());
   return {
     meta: {
