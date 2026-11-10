@@ -9,6 +9,7 @@ import { downloadElementAsPng } from "@/lib/download-image";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { normalizeTransferText } from "@/lib/text";
+import { publicTransactionList } from "@/lib/public-transaction-list";
 
 const MONTHLY_EXPENSE_CAMPAIGN_CODES = new Set(["quy-hang-thang", "quy-nhom-1"]);
 
@@ -29,13 +30,14 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   const [detailTransaction, setDetailTransaction] = useState<PublicCampaignTransaction | null>(null);
   const normalizedQuery = normalizeTransferText(query);
   const showMonthlyExpenses = MONTHLY_EXPENSE_CAMPAIGN_CODES.has(data.code);
+  const transactions = useMemo(() => publicTransactionList(data.transactions), [data.transactions]);
 
   const filteredTransactions = useMemo(() => {
     if (!normalizedQuery) {
-      return [...data.transactions].sort(compareTransactionNewestFirst);
+      return [...transactions].sort(compareTransactionNewestFirst);
     }
 
-    return data.transactions.filter((transaction) => {
+    return transactions.filter((transaction) => {
       const searchableText = [
         transaction.description,
         transaction.groupedContribution?.title,
@@ -44,7 +46,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
       ].filter(Boolean).join(" ");
       return normalizeTransferText(searchableText).includes(normalizedQuery);
     }).sort(compareTransactionNewestFirst);
-  }, [data.transactions, normalizedQuery]);
+  }, [transactions, normalizedQuery]);
 
   return (
     <div className="min-h-screen bg-[#fff8fb] text-[#2d1726]">
@@ -195,7 +197,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
               <div>
                 <h2 className="text-base font-semibold tracking-tight text-[#4a1838]">Phương danh thí chủ</h2>
                 <p className="mt-0.5 text-xs text-stone-500">
-                  {filteredTransactions.length.toLocaleString("vi-VN")} / {data.transactions.length.toLocaleString("vi-VN")} khoản hùn phước công khai
+                  {filteredTransactions.length.toLocaleString("vi-VN")} / {transactions.length.toLocaleString("vi-VN")} khoản hùn phước công khai
                 </p>
               </div>
             </div>
