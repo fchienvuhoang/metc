@@ -43,6 +43,7 @@ import type {
 import { downloadElementAsPng } from "@/lib/download-image";
 import { CampaignTransferContent } from "@/components/campaign-transfer-content";
 import { splitKeywords } from "@/lib/text";
+import { formatCampaignTarget, parseCampaignTarget } from "@/lib/campaign-target";
 
 type Props = {
   state: DashboardState;
@@ -2100,7 +2101,26 @@ function CampaignModal({
             placeholder="Cúng dường y áo..."
             required
           />
-          <Input name="targetAmount" label="Mục tiêu thành tựu (₫)" type="number" min="1" step="1" max={Number.MAX_SAFE_INTEGER} defaultValue={campaign?.targetAmount ?? ""} placeholder="Để trống nếu chưa có mục tiêu" />
+          <Input
+            name="targetAmount"
+            label="Mục tiêu thành tựu (₫)"
+            inputMode="numeric"
+            defaultValue={formatCampaignTarget(campaign?.targetAmount ?? "")}
+            placeholder="Để trống nếu chưa có mục tiêu"
+            className="tabular-nums"
+            onChange={(event) => {
+              const input = event.currentTarget;
+              const digitsBeforeCursor = input.value.slice(0, input.selectionStart ?? input.value.length).replace(/\D/g, "").length;
+              input.value = formatCampaignTarget(input.value);
+              let cursor = 0;
+              let digits = 0;
+              while (cursor < input.value.length && digits < digitsBeforeCursor) {
+                if (/\d/.test(input.value[cursor])) digits += 1;
+                cursor += 1;
+              }
+              input.setSelectionRange(cursor, cursor);
+            }}
+          />
           <p className="text-xs text-zinc-500">Tiến độ trên trang công khai được tính theo tổng tiền đã hùn phước.</p>
           <Textarea
             name="keywords"
@@ -2373,7 +2393,7 @@ function campaignPayloadFromForm(formData: FormData) {
     code: String(formData.get("code") ?? ""),
     name: String(formData.get("name") ?? ""),
     description: String(formData.get("description") ?? ""),
-    targetAmount: String(formData.get("targetAmount") ?? "").trim() ? Number(formData.get("targetAmount")) : null,
+    targetAmount: parseCampaignTarget(String(formData.get("targetAmount") ?? "")),
     status: String(formData.get("status") ?? "ACTIVE"),
     keywords: splitKeywords(String(formData.get("keywords") ?? "")),
   };
