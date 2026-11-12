@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { campaignTargetSchema } from "@/lib/campaign-target";
 import { apiError } from "@/lib/api";
 import { getWorkspaceFromRequest } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
@@ -14,6 +15,7 @@ const updateCampaignSchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional().nullable(),
+  targetAmount: campaignTargetSchema,
   status: z.enum(["ACTIVE", "PAUSED", "COMPLETED"]),
   keywords: z.array(z.string().min(1)).default([]),
 });
@@ -59,6 +61,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           code,
           name: body.name.trim(),
           description: body.description?.trim() || null,
+          targetAmount: body.targetAmount,
           status: body.status,
           keywords: {
             createMany: {

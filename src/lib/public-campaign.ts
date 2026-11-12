@@ -9,6 +9,7 @@ export type PublicCampaignData = {
   name: string;
   description: string | null;
   status: "ACTIVE" | "PAUSED" | "COMPLETED";
+  targetAmount: number | null;
   income: number;
   expenses: number;
   balance: number;
@@ -129,6 +130,7 @@ async function loadPublicCampaignData(code: string, workspace: BankWorkspace = "
     where: { workspace_code: { workspace, code: normalizedCode } },
     select: {
       id: true,
+      targetAmount: true,
       code: true,
       name: true,
       description: true,
@@ -320,6 +322,7 @@ async function loadPublicCampaignData(code: string, workspace: BankWorkspace = "
     name: campaign.name,
     description: campaign.description,
     status: campaign.status,
+    targetAmount: campaign.targetAmount == null ? null : decimalToNumber(campaign.targetAmount),
     income,
     expenses,
     balance: openingBalance + income - expenses,
@@ -381,7 +384,7 @@ export function getCachedPublicCampaignData(code: string, workspace: BankWorkspa
   const normalizedCode = makeCampaignCode(code);
   return unstable_cache(
     () => getPublicCampaignData(normalizedCode, workspace),
-    ["public-campaign-data-v11", workspace, normalizedCode],
+    ["public-campaign-data-v12", workspace, normalizedCode],
     { revalidate: false, tags: [publicCampaignDataTag(normalizedCode, workspace)] },
   )();
 }

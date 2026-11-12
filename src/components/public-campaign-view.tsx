@@ -10,6 +10,7 @@ import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { normalizeTransferText } from "@/lib/text";
 import { publicTransactionList } from "@/lib/public-transaction-list";
+import { campaignProgress } from "@/lib/campaign-target";
 
 const MONTHLY_EXPENSE_CAMPAIGN_CODES = new Set(["quy-hang-thang", "quy-nhom-1"]);
 
@@ -30,6 +31,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   const [detailTransaction, setDetailTransaction] = useState<PublicCampaignTransaction | null>(null);
   const normalizedQuery = normalizeTransferText(query);
   const showMonthlyExpenses = MONTHLY_EXPENSE_CAMPAIGN_CODES.has(data.code);
+  const progress = campaignProgress(data.income, data.targetAmount);
   const transactions = useMemo(() => publicTransactionList(data.transactions), [data.transactions]);
 
   const filteredTransactions = useMemo(() => {
@@ -109,6 +111,20 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 <span>Lượt hùn phước</span>
                 <span className="font-bold text-[#4a1838]">{data.transactionCount.toLocaleString("vi-VN")}</span>
               </div>
+              {progress ? (
+                <div className="space-y-3 border-t border-[#efd3df] px-5 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-[#4a1838]">
+                    <span>Tiến độ thành tựu</span>
+                    <span>{progress.percent.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%</span>
+                  </div>
+                  <progress aria-label="Tiến độ thành tựu" aria-valuetext={`Đã hùn ${money(data.income)} trên mục tiêu ${money(data.targetAmount!)}`} max={100} value={progress.barPercent} className="block h-3 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-[#f3dfe7] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#a3315f] [&::-moz-progress-bar]:bg-[#a3315f]" />
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex flex-wrap justify-between gap-2"><dt className="text-[#75606e]">Đã hùn được</dt><dd className="font-semibold tabular-nums text-[#a3315f]">{money(data.income)}</dd></div>
+                    <div className="flex flex-wrap justify-between gap-2"><dt className="text-[#75606e]">Mục tiêu thành tựu</dt><dd className="font-semibold tabular-nums text-[#4a1838]">{money(data.targetAmount!)}</dd></div>
+                  </dl>
+                  <p className="text-xs text-[#75606e]">{progress.remaining > 0 ? `Còn ${money(progress.remaining)} để đạt mục tiêu` : "Đã đạt mục tiêu thành tựu"}</p>
+                </div>
+              ) : null}
             </section>
           </div>
         </div>

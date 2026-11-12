@@ -66,6 +66,7 @@ export type CampaignSummary = {
   name: string;
   description: string | null;
   status: "ACTIVE" | "PAUSED" | "COMPLETED";
+  targetAmount: number | null;
   income: number;
   debit: number;
   expenses: number;
@@ -323,6 +324,7 @@ async function loadDashboardState(workspace: BankWorkspace): Promise<DashboardSt
         name: campaign.name,
         description: campaign.description,
         status: campaign.status,
+        targetAmount: campaign.targetAmount == null ? null : decimalToNumber(campaign.targetAmount),
         income,
         debit,
         expenses: expensesAmount,

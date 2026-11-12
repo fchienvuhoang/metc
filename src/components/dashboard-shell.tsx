@@ -2100,6 +2100,8 @@ function CampaignModal({
             placeholder="Cúng dường y áo..."
             required
           />
+          <Input name="targetAmount" label="Mục tiêu thành tựu (₫)" type="number" min="1" step="1" max={Number.MAX_SAFE_INTEGER} defaultValue={campaign?.targetAmount ?? ""} placeholder="Để trống nếu chưa có mục tiêu" />
+          <p className="text-xs text-zinc-500">Tiến độ trên trang công khai được tính theo tổng tiền đã hùn phước.</p>
           <Textarea
             name="keywords"
             label="Từ khóa"
@@ -2371,6 +2373,7 @@ function campaignPayloadFromForm(formData: FormData) {
     code: String(formData.get("code") ?? ""),
     name: String(formData.get("name") ?? ""),
     description: String(formData.get("description") ?? ""),
+    targetAmount: String(formData.get("targetAmount") ?? "").trim() ? Number(formData.get("targetAmount")) : null,
     status: String(formData.get("status") ?? "ACTIVE"),
     keywords: splitKeywords(String(formData.get("keywords") ?? "")),
   };

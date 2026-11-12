@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { campaignTargetSchema } from "@/lib/campaign-target";
 import { apiError } from "@/lib/api";
 import { getWorkspaceFromRequest } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
@@ -13,6 +14,7 @@ const campaignSchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional().nullable(),
+  targetAmount: campaignTargetSchema,
   status: z.enum(["ACTIVE", "PAUSED", "COMPLETED"]).default("ACTIVE"),
   keywords: z.array(z.string().min(1)).default([]),
 });
@@ -62,6 +64,7 @@ export async function POST(request: Request) {
         code,
         name: body.name.trim(),
         description: body.description?.trim() || null,
+        targetAmount: body.targetAmount,
         status: body.status,
         keywords: {
           createMany: {
