@@ -31,5 +31,5 @@ test("wrong-bank files fail before database access even when named as the select
     "@/lib/prisma": { getPrisma: () => { throw new Error("Database must not be reached"); } },
   })("src/lib/importer.ts");
   await assert.rejects(importBankStatement(await vibStatement("BIDV"), "VIB.xlsx", "VIB"), /không phải sao kê VIB/);
-  await assert.rejects(importBankStatement(await vibStatement(), "BIDV.xlsx", "BIDV"), /mẫu sao kê BIDV/);
+  await assert.rejects(importBankStatement(await vibStatement(), "ACB.xlsx", "BIDV"), /mẫu sao kê ACB/);
 });

@@ -42,6 +42,7 @@ import type {
 } from "@/lib/dashboard";
 import { downloadElementAsPng } from "@/lib/download-image";
 import { CampaignTransferContent } from "@/components/campaign-transfer-content";
+import { workspaceBankName } from "@/lib/workspace";
 import { splitKeywords } from "@/lib/text";
 import { formatCampaignTarget, parseCampaignTarget } from "@/lib/campaign-target";
 
@@ -55,6 +56,7 @@ type ImportResponse = {
   totalRows: number;
   insertedRows: number;
   duplicateRows: number;
+  excludedRows?: number;
   unmatchedRows: number;
   accountNumber: string | null;
   closingBalance: number | null;
@@ -114,7 +116,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
   }, [data.workspace]);
   const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
   const switchingWorkspaceRef = useRef(false);
-  const [targetWorkspace, setTargetWorkspace] = useState<string | null>(null);
+  const [targetWorkspace, setTargetWorkspace] = useState<BankWorkspace | null>(null);
   const [mainTab, setMainTab] = useState<"overview" | "transactions">("overview");
   const [activeTab, setActiveTab] = useState("all");
   const [query, setQuery] = useState("");
@@ -482,7 +484,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
   const isWorkspaceBusy = isImporting || isImportingEmail || isSavingCampaign || isReclassifying
     || deletingCampaignId !== null || pendingTransactionId !== null || isSavingOpeningBalance || isBulkAssigning;
 
-  async function switchWorkspace(workspace: string) {
+  async function switchWorkspace(workspace: BankWorkspace) {
     if (workspace === data.workspace || switchingWorkspaceRef.current || isWorkspaceBusy) return;
     switchingWorkspaceRef.current = true;
     setTargetWorkspace(workspace);
@@ -549,7 +551,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
         <div role="status" className="fixed inset-0 z-[100] flex items-center justify-center bg-white/90">
           <div className="flex items-center gap-3 rounded-xl border border-indigo-200 bg-white px-6 py-5 text-lg font-semibold text-indigo-800 shadow-lg">
             <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin" />
-            Đang chuyển sang {targetWorkspace}…
+            Đang chuyển sang {targetWorkspace ? workspaceBankName(targetWorkspace) : ""}…
           </div>
         </div>
       ) : null}
@@ -560,7 +562,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
             <BrandLogo className="h-16 w-16" priority />
             <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-              MettaCitta · {data.workspace}
+              MettaCitta · {workspaceBankName(data.workspace)}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal text-zinc-950">
               Quản lý thiện pháp và sao kê
@@ -583,11 +585,11 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
                       : "border-white bg-white text-zinc-600 hover:border-indigo-300 hover:text-indigo-800"}`}
                   >
                     {workspace === data.workspace ? <CheckCircle2 aria-hidden="true" className="h-5 w-5" /> : null}
-                    {workspace}
+                    {workspaceBankName(workspace)}
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-indigo-800">Chỉ nhập sao kê {data.workspace}. Dữ liệu hai ngân hàng được quản lý riêng.</p>
+              <p className="mt-2 text-xs text-indigo-800">Chỉ nhập sao kê {workspaceBankName(data.workspace)}. Dữ liệu hai ngân hàng được quản lý riêng.</p>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
               <HeaderStat label="Giao dịch" value={data.overview.transactionCount.toLocaleString("vi-VN")} />
@@ -625,9 +627,9 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
               <form className="mt-4 grid gap-3" onSubmit={handleImport}>
                 <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center hover:border-indigo-400 hover:bg-indigo-50/40">
                   <FileSpreadsheet className="h-8 w-8 text-indigo-600" />
-                  <span className="text-sm font-medium text-zinc-800">Chọn file sao kê {data.workspace}</span>
+                  <span className="text-sm font-medium text-zinc-800">Chọn file sao kê {workspaceBankName(data.workspace)}</span>
                   <span className="text-xs text-zinc-500">
-                    File Excel .xlsx gốc của {data.workspace}, tối đa 10 MB. File khác ngân hàng sẽ bị từ chối.
+                    File Excel .xlsx gốc của {workspaceBankName(data.workspace)}, tối đa 10 MB. File khác ngân hàng sẽ bị từ chối.
                   </span>
                   <input
                     name="statementFile"
@@ -637,12 +639,6 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
                     className="mt-1 block max-w-full text-xs text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-100 file:px-3 file:py-2 file:font-medium file:text-indigo-700"
                   />
                 </label>
-                {data.workspace === "BIDV" ? (
-                  <label className="block text-sm">
-                    <span className="font-medium text-zinc-800">Mật khẩu Excel khác (để trống để dùng mật khẩu đã cấu hình)</span>
-                    <input name="password" type="password" autoComplete="off" maxLength={255} className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2" />
-                  </label>
-                ) : null}
                 <button
                   disabled={isImporting}
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
@@ -666,6 +662,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
                     <p className="mt-1 truncate text-xs text-emerald-800/70" title={data.latestImport.sourceLabel}>
                       File: {data.latestImport.sourceLabel}
                     </p>
+                    {data.latestImport.excludedRows > 0 ? <p className="mt-1 text-xs text-emerald-900">Đã loại {data.latestImport.excludedRows} giao dịch chuyển số dư nội bộ khỏi tổng thu.</p> : null}
                   </div>
                 </div>
               ) : (
@@ -717,6 +714,7 @@ function Dashboard({ data, allowedWorkspaces }: { data: DashboardData; allowedWo
                   <dl className="mt-2 grid grid-cols-2 gap-2">
                     <StatLine label="Mới" value={importResult.insertedRows} />
                     <StatLine label="Trùng" value={importResult.duplicateRows} />
+                    {importResult.excludedRows ? <StatLine label="Chuyển nội bộ, không tính thu" value={importResult.excludedRows} /> : null}
                     <StatLine label="Tổng dòng" value={importResult.totalRows} />
                     <StatLine label="Chưa khớp" value={importResult.unmatchedRows} />
                   </dl>

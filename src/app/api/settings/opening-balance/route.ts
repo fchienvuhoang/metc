@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { workspaceBankName } from "@/lib/workspace";
 import { apiError } from "@/lib/api";
 import { getWorkspaceFromRequest } from "@/lib/auth";
 import { toPrismaDecimal } from "@/lib/money";
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
         await tx.bankAccount.create({
           data: {
             workspace,
-            bankName: workspace,
+            bankName: workspaceBankName(workspace),
             accountNumber: `${workspace}_UNKNOWN`,
             currentBalance: opening.bankBalance,
             balanceAsOf: opening.cutoffDate,

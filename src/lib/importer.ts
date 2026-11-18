@@ -4,7 +4,8 @@ import { classifyDescription, type KeywordRule } from "@/lib/classifier";
 import { toPrismaDecimal } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
 import { normalizeTransferText } from "@/lib/text";
-import { parseBidvStatement } from "@/lib/bidv";
+import { parseAcbStatement, isAcbOpeningTransfer, isAcbPersonalReceipt } from "@/lib/acb";
+import { workspaceBankName } from "@/lib/workspace";
 import { parseVibStatement } from "@/lib/vib";
 
 export type ImportResult = {
@@ -13,6 +14,7 @@ export type ImportResult = {
   totalRows: number;
   insertedRows: number;
   duplicateRows: number;
+  excludedRows: number;
   unmatchedRows: number;
   accountNumber: string | null;
   closingBalance: number | null;
@@ -28,11 +30,16 @@ export async function importVibStatement(fileBuffer: Buffer, fileName: string) {
   return importBankStatement(fileBuffer, fileName, "VIB");
 }
 
-export async function importBankStatement(fileBuffer: Buffer, fileName: string, workspace: BankWorkspace, password?: string) {
-  const parsed = workspace === "BIDV" ? await parseBidvStatement(fileBuffer, password) : await parseVibStatement(fileBuffer);
-  if (parsed.meta.sourceBank !== workspace) {
-    throw new Error(`File sao kê không thuộc ngân hàng ${workspace} đang chọn.`);
+export async function importBankStatement(fileBuffer: Buffer, fileName: string, workspace: BankWorkspace) {
+  const parsed = workspace === "BIDV" ? await parseAcbStatement(fileBuffer) : await parseVibStatement(fileBuffer);
+  if (parsed.meta.sourceBank !== workspaceBankName(workspace)) {
+    throw new Error(`File sao kê không thuộc ngân hàng ${workspaceBankName(workspace)} đang chọn.`);
   }
+  if (workspace === "BIDV" && parsed.meta.accountNumber !== "28808031") {
+    throw new Error("Sổ ACB hiện quản lý tài khoản 28808031. Vui lòng chọn đúng sao kê tài khoản này.");
+  }
+  const excluded = parsed.rows.filter(row => parsed.meta.sourceBank === "ACB" && isAcbOpeningTransfer(parsed.meta.accountNumber, row));
+  const included = parsed.rows.filter(row => !excluded.includes(row));
   const prisma = getPrisma();
   const rules = await loadKeywordRules(prisma, workspace);
   const openingBalance = await prisma.openingBalance.findUnique({
@@ -41,7 +48,7 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
   });
 
   if (openingBalance) {
-    const olderRow = parsed.rows.find((row) => row.transactionDate < openingBalance.cutoffDate);
+    const olderRow = included.find((row) => row.transactionDate < openingBalance.cutoffDate);
     if (olderRow) {
       throw new Error(
         `Sao kê có giao dịch trước ngày bắt đầu quản lý (${openingBalance.cutoffDate.toLocaleDateString("vi-VN")}). Hãy chỉ import từ ngày đã chốt trở đi.`,
@@ -50,7 +57,7 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
   }
 
   const uniqueRows = new Map<string, (typeof parsed.rows)[number]>();
-  for (const row of parsed.rows) {
+  for (const row of included) {
     if (!uniqueRows.has(row.transactionCode)) {
       uniqueRows.set(row.transactionCode, row);
     }
@@ -58,6 +65,8 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
 
   return prisma.$transaction(async (tx: TransactionClient) => {
     const accountNumber = parsed.meta.accountNumber;
+    const previousAccount = await tx.bankAccount.findUnique({ where: { workspace_accountNumber: { workspace, accountNumber } } });
+    const preserveNewerBalance = previousAccount?.balanceAsOf && previousAccount.balanceAsOf > parsed.meta.toDate;
     const account = await tx.bankAccount.upsert({
       where: { workspace_accountNumber: { workspace, accountNumber } },
       update: {
@@ -65,8 +74,7 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
         bankName: parsed.meta.sourceBank,
         currency: parsed.meta.currency,
         accountName: parsed.meta.accountName,
-        currentBalance: toPrismaDecimal(parsed.meta.closingBalance ?? 0),
-        balanceAsOf: parsed.meta.toDate,
+        ...(preserveNewerBalance ? {} : { currentBalance: toPrismaDecimal(parsed.meta.closingBalance ?? 0), balanceAsOf: parsed.meta.toDate }),
       },
       create: {
         workspace,
@@ -91,6 +99,8 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
         closingBalance:
           parsed.meta.closingBalance == null ? null : toPrismaDecimal(parsed.meta.closingBalance),
         totalRows: parsed.rows.length,
+        excludedRows: excluded.length,
+        excludedTransactions: excluded.map(row => ({ ...row, transactionDate: row.transactionDate.toISOString(), reason: "Chuyển số dư BIDV sang ACB; đã tính trong quỹ, không ghi nhận thu lần nữa." })) as unknown as InputJsonObject[],
       },
     });
 
@@ -102,8 +112,14 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
     const existingCodes = new Set(existing.map((item) => item.transactionCode));
     const insertableRows = [...uniqueRows.values()].filter((row) => !existingCodes.has(row.transactionCode));
 
+    const personalReceipt = insertableRows.some(row => parsed.meta.sourceBank === "ACB" && isAcbPersonalReceipt(accountNumber, row));
+    const personalCampaign = personalReceipt ? await tx.campaign.findUnique({ where: { workspace_code: { workspace, code: "ca-nhan" } } }) : null;
+    if (personalReceipt && !personalCampaign) throw new Error("Không tìm thấy thiện pháp Thu/chi cá nhân để ghi khoản ACB 100.000đ.");
     const data = insertableRows.map((row) => {
-      const classification = classifyDescription(row.description, rules);
+      const manualPersonal = personalCampaign && isAcbPersonalReceipt(accountNumber, row);
+      const classification = manualPersonal
+        ? { campaignId: personalCampaign.id, matchedKeyword: null, status: "MANUAL" as const }
+        : classifyDescription(row.description, rules);
 
       return {
         workspace,
@@ -120,7 +136,8 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
         balanceAfter: row.balanceAfter == null ? null : toPrismaDecimal(row.balanceAfter),
         matchedKeyword: classification.matchedKeyword,
         classificationStatus: classification.status,
-        raw: row.raw as InputJsonObject,
+        accountingType: manualPersonal ? "PERSONAL" as const : "FUND" as const,
+        raw: { ...row.raw, ...(manualPersonal ? { classificationSource: "user_confirmed_personal_campaign", note: "Khoản 100.000đ ACB ngày 13/11 được người dùng chỉ định vào Thu/chi cá nhân." } : {}) } as InputJsonObject,
       };
     });
 
@@ -131,10 +148,11 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
         })
       : { count: 0 };
 
-    const duplicateRows = parsed.rows.length - created.count;
+    const duplicateRows = included.length - created.count;
     const unmatchedRows = data.filter((row) => row.classificationStatus === "UNMATCHED").length;
     const campaignCodesById = new Map(rules.map((rule) => [rule.campaignId, rule.campaignCode]));
     const affectedCampaignCodes = [
+      ...(personalCampaign ? [personalCampaign.code] : []),
       ...new Set(
         data
           .map((row) => row.campaignId && campaignCodesById.get(row.campaignId))
@@ -157,6 +175,7 @@ export async function importBankStatement(fileBuffer: Buffer, fileName: string, 
       totalRows: parsed.rows.length,
       insertedRows: created.count,
       duplicateRows,
+      excludedRows: excluded.length,
       unmatchedRows,
       accountNumber,
       closingBalance: parsed.meta.closingBalance,

@@ -29,6 +29,13 @@ enum BankWorkspace {
   BIDV
 }
 
+enum TransactionAccountingType {
+  FUND
+  PERSONAL
+  INTERNAL_TRANSFER
+  BANK_INTEREST
+}
+
 model BankAccount {
   id             String            @id @default(cuid())
   bankName       String            @default("VIB")
@@ -60,6 +67,8 @@ model ImportBatch {
   totalRows      Int               @default(0)
   insertedRows   Int               @default(0)
   duplicateRows  Int               @default(0)
+  excludedRows   Int               @default(0)
+  excludedTransactions Json?
   unmatchedRows  Int               @default(0)
   importedAt     DateTime          @default(now())
   workspace      BankWorkspace     @default(VIB)
@@ -144,6 +153,7 @@ model BankTransaction {
   balanceAfter          Decimal?             @db.Decimal(18, 2)
   matchedKeyword        String?
   classificationStatus  ClassificationStatus @default(UNMATCHED)
+  accountingType        TransactionAccountingType @default(FUND)
   raw                   Json?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt

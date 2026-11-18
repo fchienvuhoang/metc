@@ -6,7 +6,7 @@ export function BrandLogo({ className = "h-16 w-16", priority = false }: {
 }) {
   return (
     <Image
-      src="/mettacitta-logo.png"
+      src="/mettacitta-logo-v2.png"
       alt="Logo MettaCitta"
       width={128}
       height={128}

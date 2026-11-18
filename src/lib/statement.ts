@@ -11,7 +11,7 @@ export type BankStatementRow = {
 
 export type ParsedBankStatement = {
   meta: {
-    sourceBank: "VIB" | "BIDV";
+    sourceBank: "VIB" | "BIDV" | "ACB";
     currency: string;
     accountNumber: string;
     accountName?: string;

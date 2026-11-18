@@ -16,7 +16,7 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   try {
     const workspace = await getWorkspaceFromRequest(request);
-    if (workspace !== "VIB") return NextResponse.json({ error: "Tenant BIDV chỉ hỗ trợ tải file sao kê, không được đọc Gmail VIB." }, { status: 403 });
+    if (workspace !== "VIB") return NextResponse.json({ error: "Sổ ACB chỉ hỗ trợ tải file sao kê, không được đọc Gmail VIB." }, { status: 403 });
     return NextResponse.json({ configured: isVibEmailConfigured() });
   } catch (error) {
     return apiError(error);
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const workspace = await getWorkspaceFromRequest(request);
-    if (workspace !== "VIB") return NextResponse.json({ error: "Tenant BIDV chỉ hỗ trợ tải file sao kê, không được đọc Gmail VIB." }, { status: 403 });
+    if (workspace !== "VIB") return NextResponse.json({ error: "Sổ ACB chỉ hỗ trợ tải file sao kê, không được đọc Gmail VIB." }, { status: 403 });
     const statement = await getLatestVibStatementFromEmail();
     const prisma = getPrisma();
     const sourceLabel = `Email VIB ${statement.fingerprint.slice(0, 16)} - ${statement.fileName}`;

@@ -1,5 +1,5 @@
 import type { BankWorkspace } from "@prisma/client";
-import { publicCampaignPath } from "@/lib/workspace";
+import { publicCampaignPath, workspaceBankName } from "@/lib/workspace";
 import { BrandLogo } from "@/components/brand-logo";
 import { ArrowRight, HeartHandshake } from "lucide-react";
 import { CampaignTransferContent } from "@/components/campaign-transfer-content";
@@ -16,7 +16,7 @@ export async function PublicCampaignList({ workspace }: { workspace: BankWorkspa
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-700">
             <BrandLogo className="h-16 w-16 sm:h-20 sm:w-20" priority />
-            MettaCitta · {workspace}
+            MettaCitta · {workspaceBankName(workspace)}
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-normal sm:text-3xl">
             Các thiện pháp đang thực hiện

@@ -11,7 +11,7 @@ test('empty selection produces no share text; a single selection preserves the o
   const text = campaignStatementsText([first], 'https://example.test/');
   assert.match(text, /CẬP NHẬT SAO KÊ THIỆN PHÁP TP01/);
   assert.ok(text.includes('1.000.000'));
-  assert.ok(text.includes('https://example.test/thien-phap/bidv/tp01'));
+  assert.ok(text.includes('https://example.test/thien-phap/acb/tp01'));
   assert.ok(!text.includes('example.test//'));
   assert.ok(!text.includes('TP02'));
 });
@@ -20,8 +20,8 @@ test('combo includes each campaign and URL once, counts duplicates once and tota
   const text = campaignStatementsText([first, second, first], 'https://example.test');
   assert.match(text, /CẬP NHẬT SAO KÊ 2 THIỆN PHÁP/);
   assert.equal(text.match(/KÍNH CHÚC QUÝ VỊ/g)?.length, 1);
-  assert.equal(text.match(/https:\/\/example.test\/thien-phap\/bidv\/tp01/g)?.length, 1);
-  assert.equal(text.match(/https:\/\/example.test\/thien-phap\/bidv\/tp02/g)?.length, 1);
+  assert.equal(text.match(/https:\/\/example.test\/thien-phap\/acb\/tp01/g)?.length, 1);
+  assert.equal(text.match(/https:\/\/example.test\/thien-phap\/acb\/tp02/g)?.length, 1);
   assert.ok(text.includes('1.000.000'));
   assert.ok(text.includes('2.500.000'));
   assert.ok(text.includes('3.500.000'));

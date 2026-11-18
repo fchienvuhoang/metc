@@ -1,3 +1,4 @@
+import { workspaceBankName } from "@/lib/workspace";
 import { BrandLogo } from "@/components/brand-logo";
 import { ExternalLink, Landmark, LockKeyhole } from "lucide-react";
 import { cookies } from "next/headers";
@@ -60,7 +61,7 @@ export default async function ReadonlyDashboardPage({ params }: { params: Promis
               <div className="flex items-center gap-3">
                 <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><Landmark className="h-5 w-5" /></span>
                 <div>
-                  <h2 className="text-lg font-semibold">Ngân hàng {summary.workspace}</h2>
+                  <h2 className="text-lg font-semibold">Ngân hàng {workspaceBankName(summary.workspace)}</h2>
                   <p className="text-sm text-zinc-500">
                     {summary.account ? `${summary.account.accountNumber}${summary.account.accountName ? ` · ${summary.account.accountName}` : ""}` : "Chưa có tài khoản"}
                   </p>

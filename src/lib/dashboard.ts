@@ -48,6 +48,7 @@ export type DashboardData = {
     totalRows: number;
     insertedRows: number;
     duplicateRows: number;
+    excludedRows: number;
     unmatchedRows: number;
   } | null;
   openingBalance: {
@@ -445,6 +446,7 @@ async function loadDashboardState(workspace: BankWorkspace): Promise<DashboardSt
               totalRows: latestImport.totalRows,
               insertedRows: latestImport.insertedRows,
               duplicateRows: latestImport.duplicateRows,
+              excludedRows: latestImport.excludedRows,
               unmatchedRows: latestImport.unmatchedRows,
             }
           : null,
