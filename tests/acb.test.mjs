@@ -34,6 +34,38 @@ test("ACB rejects wrong bank headings, inconsistent controls, dates and missing 
   }
 });
 
+async function identifiedAccountStatement(change) {
+  return statement(s => {
+    s.spliceColumns(5, 0, []);
+    s.getCell("E8").value = "Tài khoản định danh";
+    s.getRow(6).values = [null, null, null, null, "Số dư đầu", "(-) Tổng tiền rút ra", "(+) Tổng tiền gửi vào", "Số dư cuối"];
+    s.getRow(7).values = [null, null, null, null, 0, 9400000, 40082039, 30682039];
+    s.addRow(["19/11/2026", "18/11/2026 20:51:22", "2502", "Test withdrawal one", "", 3800000, "", 36282039]);
+    s.addRow(["19/11/2026", "18/11/2026 20:55:19", "2503", "Test withdrawal two", "", 5600000, "", 30682039]);
+    change?.(s);
+  });
+}
+
+test("ACB supports the account identifier column and next-day effective dates without changing transaction IDs", async () => {
+  const old = await parseAcbStatement(await statement());
+  const parsed = await parseAcbStatement(await identifiedAccountStatement());
+  assert.equal(parsed.rows.length, 4);
+  assert.deepEqual(parsed.rows.slice(0, 2).map(r => r.transactionCode), old.rows.map(r => r.transactionCode));
+  assert.equal(parsed.rows.reduce((s, r) => s + r.debitAmount, 0), 9400000);
+  assert.equal(parsed.rows.reduce((s, r) => s + r.creditAmount, 0), 40082039);
+  assert.equal(parsed.meta.closingBalance, 30682039);
+  assert.equal(parsed.rows[3].transactionDate.toISOString(), "2026-11-18T13:55:19.000Z");
+  for (const change of [
+    s => { s.getCell("B12").value = "19/11/2026 20:55:19"; },
+    s => { s.getCell("A12").value = "31/11/2026"; },
+    s => { s.getCell("E8").value = "Unknown column"; },
+    s => { s.getCell("F7").value = 1; },
+    s => { s.getCell("G7").value = 1; },
+    s => { s.getCell("H12").value = 1; },
+    s => { s.getCell("A2").value = "VIB"; },
+  ]) await assert.rejects(parseAcbStatement(await identifiedAccountStatement(change)));
+});
+
 test("ACB import preserves the tenant, excludes the carryover and classifies only the confirmed 100k receipt; repeat imports do not add income", async () => {
   let batch, saved=[], balance=0;
   const tx={

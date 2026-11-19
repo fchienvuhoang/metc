@@ -4,17 +4,22 @@ import type { BankStatementRow, ParsedBankStatement } from "@/lib/statement";
 import { assertStatementBank } from "@/lib/statement-bank";
 import { normalizeTransferText } from "@/lib/text";
 
-// ACB's original export has no bank heading. Require the complete seven-column
+// ACB's original export has no bank heading. Require the complete supported
 // layout and statement metadata; never identify a bank from transaction text.
 export async function parseAcbStatement(input: Buffer): Promise<ParsedBankStatement> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(input as unknown as ExcelJS.Buffer);
   const sheet = workbook.worksheets[0];
   if (!sheet) throw new Error("File Excel không có sheet dữ liệu.");
-  const headings = ["ngay hieu luc", "ngay giao dich", "so gd", "noi dung giao dich", "so tien rut ra", "so tien gui vao", "so du"];
+  const layouts = [
+    ["ngay hieu luc", "ngay giao dich", "so gd", "noi dung giao dich", "so tien rut ra", "so tien gui vao", "so du"],
+    ["ngay hieu luc", "ngay giao dich", "so gd", "noi dung giao dich", "tai khoan dinh danh", "so tien rut ra", "so tien gui vao", "so du"],
+  ];
   let header = 0;
+  let debitColumn = 5;
   for (let r = 1; r <= Math.min(sheet.rowCount, 100); r++) {
-    if (headings.every((h, i) => normalizeTransferText(sheet.getCell(r, i + 1).text) === h)) { header = r; break; }
+    const headings = layouts.find(layout => layout.every((h, i) => normalizeTransferText(sheet.getCell(r, i + 1).text) === h));
+    if (headings) { header = r; debitColumn = headings.length - 2; break; }
   }
   if (!header) throw new Error("Không tìm thấy bảng giao dịch theo mẫu sao kê ACB.");
   const metadata = Array.from({ length: header - 1 }, (_, i) => sheet.getCell(i + 1, 1).text.trim());
@@ -22,7 +27,7 @@ export async function parseAcbStatement(input: Buffer): Promise<ParsedBankStatem
   const owner = metadata.map(s => s.match(/^Chủ tài khoản:\s*(.+)$/i)).find(Boolean);
   const period = metadata.map(s => s.match(/^Từ ngày:\s*(\d{2}\/\d{2}\/\d{4})\s+Đến ngày:\s*(\d{2}\/\d{2}\/\d{4})$/i)).find(Boolean);
   const summary = Array.from({ length: header - 1 }, (_, i) => i + 1).find(r =>
-    ["so du dau", "tong tien rut ra", "tong tien gui vao", "so du cuoi"].every((h, i) => normalizeTransferText(sheet.getCell(r, i + 4).text) === h));
+    ["so du dau", "tong tien rut ra", "tong tien gui vao", "so du cuoi"].every((h, i) => normalizeTransferText(sheet.getCell(r, i + debitColumn - 1).text) === h));
   if (!account || !owner || !period || !summary || summary + 1 >= header) throw new Error("Không xác định rõ mẫu sao kê ACB gốc hoặc thiếu thông tin tài khoản.");
   const number = (r: number, col: number, blank = false) => {
     const raw = sheet.getCell(r, col).text.trim().replace(/,/g, "");
@@ -31,10 +36,10 @@ export async function parseAcbStatement(input: Buffer): Promise<ParsedBankStatem
     return Number(raw);
   };
   assertStatementBank(sheet, header, "ACB", true);
-  const openingBalance = number(summary + 1, 4);
-  const totalDebit = number(summary + 1, 5);
-  const totalCredit = number(summary + 1, 6);
-  const closingBalance = number(summary + 1, 7);
+  const openingBalance = number(summary + 1, debitColumn - 1);
+  const totalDebit = number(summary + 1, debitColumn);
+  const totalCredit = number(summary + 1, debitColumn + 1);
+  const closingBalance = number(summary + 1, debitColumn + 2);
   const fromDate = parseDate(period[1]);
   const toDate = new Date(parseDate(period[2]).getTime() + 86400000 - 1);
   const rows: BankStatementRow[] = [];
@@ -49,8 +54,9 @@ export async function parseAcbStatement(input: Buffer): Promise<ParsedBankStatem
     if (!/^\d+$/.test(reference) || !description) throw new Error(`Thiếu số GD hoặc nội dung ACB ở dòng ${r}.`);
     if (references.has(reference)) throw new Error(`Số GD ACB bị trùng trong file: ${reference}.`);
     references.add(reference);
-    if (effectiveDate < fromDate || effectiveDate > toDate) throw new Error(`Ngày hiệu lực ngoài kỳ sao kê ACB ở dòng ${r}.`);
-    const debitAmount = number(r, 5, true), creditAmount = number(r, 6, true), balanceAfter = number(r, 7);
+    // Evening transactions may become effective the next day, outside the export period.
+    if (transactionDate < fromDate || transactionDate > toDate) throw new Error(`Ngày giao dịch ngoài kỳ sao kê ACB ở dòng ${r}.`);
+    const debitAmount = number(r, debitColumn, true), creditAmount = number(r, debitColumn + 1, true), balanceAfter = number(r, debitColumn + 2);
     if ((debitAmount > 0) === (creditAmount > 0)) throw new Error(`Dòng ${r} phải có đúng một khoản tiền rút hoặc gửi dương.`);
     running += creditAmount - debitAmount;
     if (Math.abs(running - balanceAfter) > 0.01) throw new Error(`Số dư ACB không khớp tại dòng ${r}.`);
