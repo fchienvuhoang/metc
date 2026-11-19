@@ -26,7 +26,9 @@ const statusClassNames = {
   COMPLETED: "border-zinc-200 bg-zinc-50 text-zinc-600",
 };
 
-export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
+export function PublicCampaignView({ data, embedded = false }: { data: PublicCampaignData; embedded?: boolean }) {
+  const Heading = embedded ? "h2" : "h1";
+  const Main = embedded ? "div" : "main";
   const [query, setQuery] = useState("");
   const [detailTransaction, setDetailTransaction] = useState<PublicCampaignTransaction | null>(null);
   const normalizedQuery = normalizeTransferText(query);
@@ -51,11 +53,11 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   }, [transactions, normalizedQuery]);
 
   return (
-    <div className="min-h-screen bg-[#fff8fb] text-[#2d1726]">
+    <div className={`${embedded ? "" : "min-h-screen"} bg-[#fff8fb] text-[#2d1726]`}>
       <header
         className="public-campaign-hero relative isolate overflow-hidden border-b border-[#dba8bf] bg-[#f7eaf0]"
       >
-        <Image
+        {!embedded ? <><Image
           src="/assets/mettacitta-celestial-painted-mobile.jpg"
           alt=""
           fill
@@ -71,12 +73,12 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           sizes="(min-width: 768px) 100vw, 1px"
           className="hidden object-cover object-center md:block"
         />
-        <div className="absolute inset-0 bg-[#fff8fb]/35 sm:bg-[#fff8fb]/58" />
+        <div className="absolute inset-0 bg-[#fff8fb]/35 sm:bg-[#fff8fb]/58" /></> : null}
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-9 lg:py-12">
           <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
-                <BrandLogo className="h-20 w-20 sm:h-24 sm:w-24" priority />
+                {!embedded ? <BrandLogo className="h-20 w-20 sm:h-24 sm:w-24" priority /> : null}
                 <span className="rounded-md bg-[#4c173b] px-3 py-1.5 font-mono text-xs font-semibold text-white shadow-sm">
                   Thiện pháp {data.code}
                 </span>
@@ -88,9 +90,9 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
               <p className="mt-6 text-xs font-bold uppercase text-[#a43d6a] sm:text-sm">
                 DĀNA PUÑÑA
               </p>
-              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/70 bg-white/50 px-4 py-3 text-2xl font-bold leading-tight text-[#4a1838] shadow-[0_8px_22px_rgba(76,23,59,0.1)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
+              <Heading className="mt-2 max-w-3xl break-words rounded-lg border border-white/70 bg-white/50 px-4 py-3 text-2xl font-bold leading-tight text-[#4a1838] shadow-[0_8px_22px_rgba(76,23,59,0.1)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
                 {data.name}
-              </h1>
+              </Heading>
               {data.description ? (
                 <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-[#624b59] sm:text-base">
                   {data.description}
@@ -130,7 +132,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-5 sm:px-6 sm:py-7">
+      <Main className="mx-auto max-w-6xl space-y-5 px-4 py-5 sm:px-6 sm:py-7">
         {showMonthlyExpenses ? (
           <section className="rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
             <div>
@@ -273,7 +275,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             </div>
           </div>
         </section>
-      </main>
+      </Main>
       {detailTransaction ? (
         <PublicTransactionDetailModal
           transaction={detailTransaction}

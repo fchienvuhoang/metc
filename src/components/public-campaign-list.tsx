@@ -5,6 +5,7 @@ import { ArrowRight, HeartHandshake } from "lucide-react";
 import { CampaignTransferContent } from "@/components/campaign-transfer-content";
 import { connection } from "next/server";
 import { getCachedPublicCampaignList } from "@/lib/public-campaign";
+import { RETREAT_CODES, RETREAT_PATH } from "@/lib/retreat-campaign";
 
 export async function PublicCampaignList({ workspace }: { workspace: BankWorkspace }) {
   await connection();
@@ -28,6 +29,12 @@ export async function PublicCampaignList({ workspace }: { workspace: BankWorkspa
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-7">
+        {workspace === "BIDV" && campaigns.some(campaign => RETREAT_CODES.includes(campaign.code)) ? (
+          <a href={RETREAT_PATH} className="mb-5 block rounded-lg border border-[#edcddb] bg-[#fff8fb] p-5 text-[#4a1838] hover:border-[#a3315f]">
+            <h2 className="font-semibold">Hộ trì các khóa thiền tại Hà Nội</h2>
+            <p className="mt-1 text-sm">Tra cứu 7 thiện pháp KT00–KT06 trên cùng một trang →</p>
+          </a>
+        ) : null}
         {campaigns.length > 0 ? (
           <section className="grid gap-3 sm:grid-cols-2">
             {campaigns.map((campaign) => (
